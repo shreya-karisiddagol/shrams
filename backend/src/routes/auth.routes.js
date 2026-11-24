@@ -1,0 +1,59 @@
+/**
+ * Auth Routes
+ * POST /api/auth/register
+ * POST /api/auth/login
+ * POST /api/auth/forgot-password
+ * POST /api/auth/reset-password
+ * GET  /api/auth/me
+ */
+
+const express = require('express');
+const { body } = require('express-validator');
+const router = express.Router();
+
+const authController = require('../controllers/auth.controller');
+const { authMiddleware } = require('../middleware/auth');
+
+// ─── Validation Rules ─────────────────────────────────────────────────────────
+
+const registerValidation = [
+  body('full_name').trim().notEmpty().withMessage('Full name is required').isLength({ max: 100 }),
+  body('email').trim().isEmail().withMessage('Valid email is required').normalizeEmail(),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('usn').trim().notEmpty().withMessage('USN is required'),
+  body('phone').optional().isMobilePhone().withMessage('Invalid phone number'),
+  body('gender').optional().isIn(['male', 'female', 'other']).withMessage('Invalid gender value'),
+];
+
+const loginValidation = [
+  body('email').trim().isEmail().withMessage('Valid email is required').normalizeEmail(),
+  body('password').notEmpty().withMessage('Password is required'),
+];
+
+const forgotPasswordValidation = [
+  body('email').trim().isEmail().withMessage('Valid email is required').normalizeEmail(),
+];
+
+const resetPasswordValidation = [
+  body('token').notEmpty().withMessage('Reset token is required'),
+  body('password').isLength({ min: 6 }).withMessage('New password must be at least 6 characters'),
+];
+
+// ─── Routes ───────────────────────────────────────────────────────────────────
+
+// Register a new student account
+router.post('/register', registerValidation, authController.register);
+
+// Login and get JWT
+router.post('/login', loginValidation, authController.login);
+
+// Request password reset token
+router.post('/forgot-password', forgotPasswordValidation, authController.forgotPassword);
+
+// Reset password using token
+router.post('/reset-password', resetPasswordValidation, authController.resetPassword);
+
+// Get currently logged-in user (protected)
+router.get('/me', authMiddleware, authController.getMe);
+
+module.exports = router;
