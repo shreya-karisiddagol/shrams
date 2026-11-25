@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const pool = require('../config/db');
+const HostelModel = require('../models/hostel.model');
 const { sendSuccess, sendError, formatValidationErrors, sanitizeUser, generateToken, isValidUUID } = require('../utils/helpers');
 
 /**
@@ -330,4 +331,18 @@ exports.changePassword = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * GET /api/auth/hostels
+ * Public list of hostels for registration forms
+ */
+exports.getPublicHostels = async (req, res, next) => {
+  try {
+    const hostels = await HostelModel.findAll();
+    sendSuccess(res, hostels, 'Hostels fetched successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
 

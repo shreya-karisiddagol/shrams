@@ -65,4 +65,7 @@ router.put('/change-password', authMiddleware, changePasswordValidation, authCon
 // Get currently logged-in user (protected)
 router.get('/me', authMiddleware, authController.getMe);
 
+// Public list of hostels for registration forms
+router.get('/hostels', authController.getPublicHostels);
+
 module.exports = router;

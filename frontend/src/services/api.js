@@ -19,7 +19,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('shrams_token')
       localStorage.removeItem('shrams_user')
-      window.location.href = '/login'
+      const publicPaths = ['/login', '/register', '/forgot-password']
+      const isPublic = typeof window !== 'undefined' && publicPaths.some(p => window.location.pathname.startsWith(p))
+      if (!isPublic) {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }
@@ -30,7 +34,9 @@ export const authService = {
   login: (data) => api.post('/auth/login', data),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
   resetPassword: (data) => api.post('/auth/reset-password', data),
+  changePassword: (data) => api.put('/auth/change-password', data),
   getMe: () => api.get('/auth/me'),
+  getHostels: () => api.get('/auth/hostels'),
 }
 
 export const studentService = {

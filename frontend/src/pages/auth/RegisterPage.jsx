@@ -56,7 +56,7 @@ export default function RegisterPage() {
   })
 
   useEffect(() => {
-    studentService.getHostels()
+    authService.getHostels()
       .then(res => setHostels(res.data?.data || []))
       .catch(() => {})
   }, [])
