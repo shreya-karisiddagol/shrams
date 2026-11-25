@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { authService, studentService } from '../../services/api'
 import toast from 'react-hot-toast'
-import { AcademicCapIcon, EyeIcon, EyeSlashIcon, CheckCircleIcon, ShieldCheckIcon, UserIcon } from '@heroicons/react/24/outline'
+import {
+  AcademicCapIcon, EyeIcon, EyeSlashIcon, CheckCircleIcon,
+  ShieldCheckIcon, UserIcon, WrenchScrewdriverIcon
+} from '@heroicons/react/24/outline'
 
 const DEPARTMENTS = ['Computer Science', 'Information Science', 'Electronics', 'Mechanical', 'Civil', 'Electrical', 'Chemical', 'Biotechnology', 'Mathematics', 'Physics', 'Hostel Administration', 'Other']
 const SEMESTERS = [1,2,3,4,5,6,7,8]
@@ -10,11 +13,25 @@ const GENDERS = ['male', 'female', 'other']
 
 const STUDENT_STEPS = ['Basic Info', 'Academic Details', 'Guardian Info']
 const WARDEN_STEPS = ['Basic Info', 'Warden Details']
+const MAINTENANCE_STEPS = ['Basic Info', 'Staff Details']
+
+const MAINTENANCE_CATEGORIES = [
+  'Plumbing',
+  'Electrical',
+  'Carpentry',
+  'Cleaning & Housekeeping',
+  'Painting',
+  'HVAC / AC & Fans',
+  'General Maintenance',
+  'Civil & Masonry'
+]
 
 export default function RegisterPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const initialRole = searchParams.get('role') === 'warden' ? 'warden' : 'student'
+  const paramRole = searchParams.get('role')
+  const initialRole = ['warden', 'maintenance', 'student'].includes(paramRole) ? paramRole : 'student'
+
   const [role, setRole] = useState(initialRole)
   const [step, setStep] = useState(0)
   const [showPass, setShowPass] = useState(false)
@@ -25,8 +42,10 @@ export default function RegisterPage() {
     // Student fields
     usn: '', department: '', semester: '', gender: '', date_of_birth: '',
     address: '', parent_name: '', parent_phone: '', parent_email: '', emergency_contact: '', blood_group: '',
-    // Warden fields
-    employee_id: '', hostel_id: ''
+    // Warden / Staff fields
+    employee_id: '', hostel_id: '',
+    // Maintenance fields
+    category: 'Plumbing', assigned_block_id: ''
   })
 
   useEffect(() => {
@@ -37,7 +56,11 @@ export default function RegisterPage() {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
-  const steps = role === 'warden' ? WARDEN_STEPS : STUDENT_STEPS
+  const steps = role === 'warden'
+    ? WARDEN_STEPS
+    : role === 'maintenance'
+    ? MAINTENANCE_STEPS
+    : STUDENT_STEPS
 
   const handleRoleChange = (newRole) => {
     setRole(newRole)
@@ -55,6 +78,9 @@ export default function RegisterPage() {
     }
     if (role === 'warden' && step === 1) {
       if (!form.phone) return toast.error('Phone number is required') || false
+    }
+    if (role === 'maintenance' && step === 1) {
+      if (!form.category) return toast.error('Specialization / Trade is required') || false
     }
     return true
   }
@@ -80,6 +106,12 @@ export default function RegisterPage() {
               department: form.department || undefined,
               hostel_id: form.hostel_id || undefined,
             }
+          : role === 'maintenance'
+          ? {
+              employee_id: form.employee_id?.trim() || undefined,
+              category: form.category || 'General Maintenance',
+              assigned_block_id: form.assigned_block_id || undefined,
+            }
           : {
               usn: form.usn?.trim(),
               department: form.department || undefined,
@@ -96,7 +128,8 @@ export default function RegisterPage() {
       }
 
       await authService.register(payload)
-      toast.success(`${role === 'warden' ? 'Warden' : 'Student'} account created! Please log in.`)
+      const roleName = role === 'warden' ? 'Warden' : role === 'maintenance' ? 'Maintenance Staff' : 'Student'
+      toast.success(`${roleName} account created! Please log in.`)
       navigate('/login')
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed')
@@ -106,72 +139,113 @@ export default function RegisterPage() {
   }
 
   const isWarden = role === 'warden'
+  const isMaintenance = role === 'maintenance'
+
+  const themeBg = isWarden
+    ? 'from-emerald-50 via-white to-teal-50'
+    : isMaintenance
+    ? 'from-amber-50 via-white to-orange-50'
+    : 'from-primary-50 via-white to-indigo-50'
+
+  const primaryColor = isWarden
+    ? 'text-emerald-700'
+    : isMaintenance
+    ? 'text-amber-700'
+    : 'text-primary-600'
+
+  const buttonColor = isWarden
+    ? 'bg-emerald-600 hover:bg-emerald-700'
+    : isMaintenance
+    ? 'bg-amber-600 hover:bg-amber-700'
+    : 'bg-primary-600 hover:bg-primary-700'
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${isWarden ? 'from-emerald-50 via-white to-teal-50' : 'from-primary-50 via-white to-indigo-50'} flex items-center justify-center p-4`}>
+    <div className={`min-h-screen bg-gradient-to-br ${themeBg} flex items-center justify-center p-4`}>
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-2 mb-3">
             {isWarden ? (
               <ShieldCheckIcon className="w-9 h-9 text-emerald-600" />
+            ) : isMaintenance ? (
+              <WrenchScrewdriverIcon className="w-9 h-9 text-amber-600" />
             ) : (
               <AcademicCapIcon className="w-9 h-9 text-primary-600" />
             )}
-            <span className={`font-bold text-2xl ${isWarden ? 'text-emerald-700' : 'text-primary-600'}`}>SHRAMS</span>
+            <span className={`font-bold text-2xl ${primaryColor}`}>SHRAMS</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {isWarden ? 'Create Warden Account' : 'Create Student Account'}
+            {isWarden
+              ? 'Create Warden Account'
+              : isMaintenance
+              ? 'Create Maintenance Staff Account'
+              : 'Create Student Account'}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            {isWarden ? 'Register as a hostel warden to manage student allocations and complaints' : 'Register to access hostel accommodation and room allocation'}
+            {isWarden
+              ? 'Register as a hostel warden to manage room allocations and complaints'
+              : isMaintenance
+              ? 'Register as maintenance staff to receive and resolve hostel repair tasks'
+              : 'Register to access hostel accommodation and room allocation'}
           </p>
         </div>
 
         {/* Role Switcher Tabs */}
-        <div className="bg-gray-100 p-1 rounded-xl flex gap-1 mb-6 shadow-inner">
+        <div className="bg-gray-100 p-1 rounded-xl flex gap-1 mb-6 shadow-inner text-xs sm:text-sm font-semibold">
           <button
             type="button"
             onClick={() => handleRoleChange('student')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-              !isWarden
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg transition-all ${
+              role === 'student'
                 ? 'bg-white text-primary-700 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             <UserIcon className="w-4 h-4" />
-            I am a Student
+            Student
           </button>
           <button
             type="button"
             onClick={() => handleRoleChange('warden')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-              isWarden
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg transition-all ${
+              role === 'warden'
                 ? 'bg-emerald-600 text-white shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             <ShieldCheckIcon className="w-4 h-4" />
-            I am a Warden
+            Warden
+          </button>
+          <button
+            type="button"
+            onClick={() => handleRoleChange('maintenance')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg transition-all ${
+              role === 'maintenance'
+                ? 'bg-amber-600 text-white shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <WrenchScrewdriverIcon className="w-4 h-4" />
+            Maintenance
           </button>
         </div>
 
-        {/* Progress */}
+        {/* Progress Stepper */}
         <div className="flex items-center justify-center gap-0 mb-6">
           {steps.map((s, i) => (
             <div key={s} className="flex items-center">
               <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-all ${
                 i < step
-                  ? isWarden ? 'bg-emerald-600 text-white' : 'bg-primary-600 text-white'
+                  ? buttonColor + ' text-white'
                   : i === step
-                    ? isWarden ? 'bg-emerald-600 text-white ring-4 ring-emerald-100' : 'bg-primary-600 text-white ring-4 ring-primary-100'
+                    ? buttonColor + ' text-white ring-4 ' + (isWarden ? 'ring-emerald-100' : isMaintenance ? 'ring-amber-100' : 'ring-primary-100')
                     : 'bg-gray-200 text-gray-400'
               }`}>
                 {i < step ? <CheckCircleIcon className="w-5 h-5" /> : i + 1}
               </div>
-              <span className={`mx-2 text-xs font-medium ${i === step ? (isWarden ? 'text-emerald-700' : 'text-primary-600') : 'text-gray-400'}`}>{s}</span>
+              <span className={`mx-2 text-xs font-medium ${i === step ? primaryColor : 'text-gray-400'}`}>{s}</span>
               {i < steps.length - 1 && (
-                <div className={`w-10 h-0.5 ${i < step ? (isWarden ? 'bg-emerald-600' : 'bg-primary-600') : 'bg-gray-200'}`} />
+                <div className={`w-10 h-0.5 ${i < step ? buttonColor : 'bg-gray-200'}`} />
               )}
             </div>
           ))}
@@ -179,30 +253,117 @@ export default function RegisterPage() {
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <form onSubmit={handleSubmit}>
-            {/* Step 0: Basic Info (Both Roles) */}
+            {/* Step 0: Basic Info (All Roles) */}
             {step === 0 && (
               <div className="space-y-4">
                 <h2 className="font-semibold text-gray-900 mb-2">Basic Information</h2>
                 <div>
                   <label className="label">Full Name *</label>
-                  <input className="input-field" value={form.full_name} onChange={e => set('full_name', e.target.value)} placeholder={isWarden ? 'e.g. Dr. Ramesh Kumar' : 'Your full name'} />
+                  <input
+                    className="input-field"
+                    value={form.full_name}
+                    onChange={e => set('full_name', e.target.value)}
+                    placeholder={isWarden ? 'e.g. Dr. Ramesh Kumar' : isMaintenance ? 'e.g. Suresh Kumar' : 'Your full name'}
+                    required
+                  />
                 </div>
                 <div>
                   <label className="label">Official Email *</label>
-                  <input type="email" className="input-field" value={form.email} onChange={e => set('email', e.target.value)} placeholder={isWarden ? 'warden@university.edu' : 'your@email.com'} />
+                  <input
+                    type="email"
+                    className="input-field"
+                    value={form.email}
+                    onChange={e => set('email', e.target.value)}
+                    placeholder={isWarden ? 'warden@university.edu' : isMaintenance ? 'staff@university.edu' : 'your@email.com'}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="label">Contact Phone Number *</label>
+                  <input
+                    type="tel"
+                    className="input-field"
+                    value={form.phone}
+                    onChange={e => set('phone', e.target.value)}
+                    placeholder="e.g. 9876543210"
+                    required
+                  />
                 </div>
                 <div>
                   <label className="label">Password *</label>
                   <div className="relative">
-                    <input type={showPass ? 'text' : 'password'} className="input-field pr-10" value={form.password} onChange={e => set('password', e.target.value)} placeholder="Min 6 characters" />
-                    <button type="button" onClick={() => setShowPass(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <input
+                      type={showPass ? 'text' : 'password'}
+                      className="input-field pr-10"
+                      value={form.password}
+                      onChange={e => set('password', e.target.value)}
+                      placeholder="Min 6 characters"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPass(s => !s)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    >
                       {showPass ? <EyeSlashIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
                 <div>
                   <label className="label">Confirm Password *</label>
-                  <input type="password" className="input-field" value={form.confirm_password} onChange={e => set('confirm_password', e.target.value)} placeholder="Repeat password" />
+                  <input
+                    type="password"
+                    className="input-field"
+                    value={form.confirm_password}
+                    onChange={e => set('confirm_password', e.target.value)}
+                    placeholder="Repeat password"
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* MAINTENANCE Step 1: Staff Details */}
+            {isMaintenance && step === 1 && (
+              <div className="space-y-4">
+                <h2 className="font-semibold text-gray-900 mb-2">Maintenance Staff Details</h2>
+                <div>
+                  <label className="label">Employee / Staff ID (Optional)</label>
+                  <input
+                    className="input-field font-mono"
+                    value={form.employee_id}
+                    onChange={e => set('employee_id', e.target.value.toUpperCase())}
+                    placeholder="e.g. MS-PLUMB-01"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Leave empty to auto-generate.</p>
+                </div>
+
+                <div>
+                  <label className="label">Primary Trade / Specialization *</label>
+                  <select
+                    className="input-field"
+                    value={form.category}
+                    onChange={e => set('category', e.target.value)}
+                    required
+                  >
+                    {MAINTENANCE_CATEGORIES.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="label">Primary Hostel Assignment</label>
+                  <select
+                    className="input-field"
+                    value={form.hostel_id}
+                    onChange={e => set('hostel_id', e.target.value)}
+                  >
+                    <option value="">Campus-Wide / All Hostels</option>
+                    {hostels.map(h => (
+                      <option key={h.id} value={h.id}>{h.name} ({h.type === 'boys' ? "Boys" : "Girls"})</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}
@@ -213,25 +374,34 @@ export default function RegisterPage() {
                 <h2 className="font-semibold text-gray-900 mb-2">Warden Details</h2>
                 <div>
                   <label className="label">Employee ID (Optional)</label>
-                  <input className="input-field font-mono" value={form.employee_id} onChange={e => set('employee_id', e.target.value.toUpperCase())} placeholder="e.g. WRD-2024" />
+                  <input
+                    className="input-field font-mono"
+                    value={form.employee_id}
+                    onChange={e => set('employee_id', e.target.value.toUpperCase())}
+                    placeholder="e.g. WRD-2024"
+                  />
                 </div>
                 <div>
                   <label className="label">Department / Faculty</label>
-                  <select className="input-field" value={form.department} onChange={e => set('department', e.target.value)}>
+                  <select
+                    className="input-field"
+                    value={form.department}
+                    onChange={e => set('department', e.target.value)}
+                  >
                     <option value="">Select Department</option>
                     {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="label">Phone Number *</label>
-                  <input className="input-field" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="10-digit mobile number" maxLength={10} />
-                </div>
-                <div>
-                  <label className="label">Assigned Hostel (Optional)</label>
-                  <select className="input-field" value={form.hostel_id} onChange={e => set('hostel_id', e.target.value)}>
-                    <option value="">Select Hostel (or leave unassigned)</option>
+                  <label className="label">Assigned Hostel</label>
+                  <select
+                    className="input-field"
+                    value={form.hostel_id}
+                    onChange={e => set('hostel_id', e.target.value)}
+                  >
+                    <option value="">Select Hostel</option>
                     {hostels.map(h => (
-                      <option key={h.id} value={h.id}>{h.name} ({h.type === 'boys' ? 'Boys' : 'Girls'})</option>
+                      <option key={h.id} value={h.id}>{h.name} ({h.type === 'boys' ? "Boys" : "Girls"})</option>
                     ))}
                   </select>
                 </div>
@@ -239,64 +409,85 @@ export default function RegisterPage() {
             )}
 
             {/* STUDENT Step 1: Academic Details */}
-            {!isWarden && step === 1 && (
+            {role === 'student' && step === 1 && (
               <div className="space-y-4">
-                <h2 className="font-semibold text-gray-900 mb-2">Academic Details</h2>
+                <h2 className="font-semibold text-gray-900 mb-2">Academic Information</h2>
                 <div>
                   <label className="label">USN (University Seat Number) *</label>
-                  <input className="input-field font-mono" value={form.usn} onChange={e => set('usn', e.target.value.toUpperCase())} placeholder="e.g. 1AB22CS001" />
+                  <input
+                    className="input-field font-mono uppercase"
+                    value={form.usn}
+                    onChange={e => set('usn', e.target.value.toUpperCase())}
+                    placeholder="e.g. 1KT21CS001"
+                    required
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="label">Department *</label>
-                    <select className="input-field" value={form.department} onChange={e => set('department', e.target.value)}>
-                      <option value="">Select</option>
+                    <select
+                      className="input-field"
+                      value={form.department}
+                      onChange={e => set('department', e.target.value)}
+                      required
+                    >
+                      <option value="">Select Department</option>
                       {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="label">Semester *</label>
-                    <select className="input-field" value={form.semester} onChange={e => set('semester', e.target.value)}>
-                      <option value="">Select</option>
-                      {SEMESTERS.map(s => <option key={s} value={s}>{s}</option>)}
+                    <label className="label">Current Semester *</label>
+                    <select
+                      className="input-field"
+                      value={form.semester}
+                      onChange={e => set('semester', e.target.value)}
+                      required
+                    >
+                      <option value="">Select Semester</option>
+                      {SEMESTERS.map(s => <option key={s} value={s}>Semester {s}</option>)}
                     </select>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="label">Gender</label>
-                    <select className="input-field" value={form.gender} onChange={e => set('gender', e.target.value)}>
-                      <option value="">Select</option>
-                      {GENDERS.map(g => <option key={g} value={g}>{g.charAt(0).toUpperCase() + g.slice(1)}</option>)}
+                    <select
+                      className="input-field"
+                      value={form.gender}
+                      onChange={e => set('gender', e.target.value)}
+                    >
+                      <option value="">Select Gender</option>
+                      {GENDERS.map(g => <option key={g} value={g} className="capitalize">{g}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="label">Date of Birth</label>
-                    <input type="date" className="input-field" value={form.date_of_birth} onChange={e => set('date_of_birth', e.target.value)} />
+                    <input
+                      type="date"
+                      className="input-field"
+                      value={form.date_of_birth}
+                      onChange={e => set('date_of_birth', e.target.value)}
+                    />
                   </div>
-                </div>
-                <div>
-                  <label className="label">Blood Group</label>
-                  <select className="input-field" value={form.blood_group} onChange={e => set('blood_group', e.target.value)}>
-                    <option value="">Select</option>
-                    {['A+','A-','B+','B-','AB+','AB-','O+','O-'].map(b => <option key={b}>{b}</option>)}
-                  </select>
                 </div>
               </div>
             )}
 
-            {/* STUDENT Step 2: Contact & Guardian */}
-            {!isWarden && step === 2 && (
+            {/* STUDENT Step 2: Guardian Info */}
+            {role === 'student' && step === 2 && (
               <div className="space-y-4">
-                <h2 className="font-semibold text-gray-900 mb-2">Contact & Guardian Details</h2>
+                <h2 className="font-semibold text-gray-900 mb-2">Guardian & Personal Info</h2>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="label">Phone Number *</label>
-                    <input className="input-field" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="10-digit number" maxLength={10} />
+                    <label className="label">Blood Group</label>
+                    <select className="input-field" value={form.blood_group} onChange={e => set('blood_group', e.target.value)}>
+                      <option value="">Select Blood Group</option>
+                      {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
                   </div>
                   <div>
                     <label className="label">Emergency Contact</label>
-                    <input className="input-field" value={form.emergency_contact} onChange={e => set('emergency_contact', e.target.value)} placeholder="Emergency contact" />
+                    <input className="input-field" value={form.emergency_contact} onChange={e => set('emergency_contact', e.target.value)} placeholder="Emergency phone" />
                   </div>
                 </div>
                 <div>
@@ -323,7 +514,7 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* Navigation */}
+            {/* Navigation buttons */}
             <div className="flex gap-3 mt-6">
               {step > 0 && (
                 <button type="button" onClick={back} className="btn-secondary flex-1">← Back</button>
@@ -332,9 +523,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={next}
-                  className={`flex-1 py-2.5 rounded-lg text-white font-medium transition-all ${
-                    isWarden ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-primary-600 hover:bg-primary-700'
-                  }`}
+                  className={`flex-1 py-2.5 rounded-lg text-white font-medium transition-all ${buttonColor}`}
                 >
                   Next →
                 </button>
@@ -342,13 +531,11 @@ export default function RegisterPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`flex-1 py-2.5 rounded-lg text-white font-medium flex items-center justify-center gap-2 transition-all ${
-                    isWarden ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-primary-600 hover:bg-primary-700'
-                  }`}
+                  className={`flex-1 py-2.5 rounded-lg text-white font-medium flex items-center justify-center gap-2 transition-all ${buttonColor}`}
                 >
                   {loading
                     ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Creating...</>
-                    : `Create ${isWarden ? 'Warden' : 'Student'} Account`
+                    : `Create ${isWarden ? 'Warden' : isMaintenance ? 'Maintenance Staff' : 'Student'} Account`
                   }
                 </button>
               )}
@@ -358,7 +545,7 @@ export default function RegisterPage() {
 
         <p className="text-center text-sm text-gray-500 mt-5">
           Already have an account?{' '}
-          <Link to="/login" className={`font-medium ${isWarden ? 'text-emerald-700 hover:text-emerald-800' : 'text-primary-600 hover:text-primary-700'}`}>
+          <Link to="/login" className={`font-medium ${primaryColor} hover:underline`}>
             Sign in
           </Link>
         </p>

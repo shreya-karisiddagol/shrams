@@ -59,6 +59,11 @@ exports.register = async (req, res, next) => {
       if (empCheck.rows.length > 0) {
         return sendError(res, 'An account with this Employee ID already exists.', 409);
       }
+    } else if (role === 'maintenance' && employee_id) {
+      const empCheck = await pool.query('SELECT id FROM maintenance_staff_profiles WHERE employee_id = $1', [employee_id]);
+      if (empCheck.rows.length > 0) {
+        return sendError(res, 'An account with this Employee ID already exists.', 409);
+      }
     }
 
     // Hash password
@@ -91,6 +96,24 @@ exports.register = async (req, res, next) => {
             validHostelId
           ]
         );
+      } else if (role === 'maintenance') {
+        // Insert into maintenance_staff_profiles
+        const generatedEmpId = employee_id && employee_id.trim()
+          ? employee_id.trim().toUpperCase()
+          : `MS-${Date.now().toString().slice(-4)}`;
+        const validBlockId = req.body.assigned_block_id && isValidUUID(req.body.assigned_block_id)
+          ? req.body.assigned_block_id
+          : null;
+        const category = req.body.category && req.body.category.trim()
+          ? req.body.category.trim()
+          : 'General Maintenance';
+
+        await client.query(
+          `INSERT INTO maintenance_staff_profiles
+             (user_id, employee_id, category, assigned_block_id, is_available)
+           VALUES ($1, $2, $3, $4, true)`,
+          [newUser.id, generatedEmpId, category, validBlockId]
+        );
       } else {
         // Insert into student_profiles table
         await client.query(
@@ -110,7 +133,8 @@ exports.register = async (req, res, next) => {
       await client.query('COMMIT');
 
       const token = signToken(newUser);
-      return sendSuccess(res, { user: sanitizeUser(newUser), token }, `${role === 'warden' ? 'Warden' : 'Student'} account created successfully`, 201);
+      const roleLabel = role === 'warden' ? 'Warden' : role === 'maintenance' ? 'Maintenance Staff' : 'Student';
+      return sendSuccess(res, { user: sanitizeUser(newUser), token }, `${roleLabel} account created successfully`, 201);
     } catch (err) {
       await client.query('ROLLBACK');
       throw err;
@@ -281,3 +305,29 @@ exports.getMe = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * PUT /api/auth/change-password
+ * Change password for authenticated user
+ */
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { current_password, new_password } = req.body;
+    if (!current_password || !new_password) {
+      return sendError(res, 'Current and new password are required.', 400);
+    }
+    const userRes = await pool.query('SELECT password_hash FROM users WHERE id = $1', [req.user.id]);
+    if (userRes.rows.length === 0) return sendError(res, 'User not found.', 404);
+
+    const isMatch = await bcrypt.compare(current_password, userRes.rows[0].password_hash);
+    if (!isMatch) return sendError(res, 'Incorrect current password.', 400);
+
+    const newHash = await bcrypt.hash(new_password, 12);
+    await pool.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [newHash, req.user.id]);
+
+    sendSuccess(res, null, 'Password updated successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+

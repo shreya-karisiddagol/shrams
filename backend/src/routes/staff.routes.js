@@ -3,12 +3,16 @@ const router = express.Router();
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const staffController = require('../controllers/staff.controller');
 
+const authController = require('../controllers/auth.controller');
+
 // Require authentication and maintenance role
 router.use(authMiddleware, requireRole('maintenance'));
 
 // Profile
 router.get('/profile', staffController.getProfile);
 router.patch('/profile', staffController.updateProfile);
+router.put('/profile', staffController.updateProfile);
+router.put('/profile/password', authController.changePassword);
 router.get('/workload-stats', staffController.getWorkloadStats);
 
 // Tasks

@@ -171,10 +171,14 @@ export default function LoginPage() {
           <p className="text-center text-sm text-gray-500 mt-6">
             Don't have an account?{' '}
             <Link
-              to={form.role === 'warden' ? '/register?role=warden' : '/register'}
+              to={`/register?role=${form.role === 'maintenance' ? 'maintenance' : form.role === 'warden' ? 'warden' : 'student'}`}
               className="text-primary-600 hover:text-primary-700 font-semibold"
             >
-              {form.role === 'warden' ? 'Create Warden Account' : 'Create an account'}
+              {form.role === 'warden'
+                ? 'Create Warden Account'
+                : form.role === 'maintenance'
+                ? 'Create Maintenance Staff Account'
+                : 'Create Student Account'}
             </Link>
           </p>
         </div>

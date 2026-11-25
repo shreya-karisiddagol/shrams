@@ -20,7 +20,7 @@ const registerValidation = [
   body('full_name').trim().notEmpty().withMessage('Full name is required').isLength({ max: 100 }),
   body('email').trim().isEmail().withMessage('Valid email is required').normalizeEmail(),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  body('role').optional().isIn(['student', 'warden']).withMessage('Role must be student or warden'),
+  body('role').optional().isIn(['student', 'warden', 'maintenance']).withMessage('Role must be student, warden, or maintenance'),
   body('usn').if((val, { req }) => req.body.role === 'student' || !req.body.role).trim().notEmpty().withMessage('USN is required for student registration'),
   body('phone').optional({ values: 'falsy' }),
   body('gender').optional({ values: 'falsy' }).isIn(['male', 'female', 'other']).withMessage('Invalid gender value'),
@@ -40,9 +40,14 @@ const resetPasswordValidation = [
   body('password').isLength({ min: 6 }).withMessage('New password must be at least 6 characters'),
 ];
 
+const changePasswordValidation = [
+  body('current_password').notEmpty().withMessage('Current password is required'),
+  body('new_password').isLength({ min: 6 }).withMessage('New password must be at least 6 characters'),
+];
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
-// Register a new student account
+// Register a new user account (student, warden, maintenance)
 router.post('/register', registerValidation, authController.register);
 
 // Login and get JWT
@@ -53,6 +58,9 @@ router.post('/forgot-password', forgotPasswordValidation, authController.forgotP
 
 // Reset password using token
 router.post('/reset-password', resetPasswordValidation, authController.resetPassword);
+
+// Change password for logged-in user
+router.put('/change-password', authMiddleware, changePasswordValidation, authController.changePassword);
 
 // Get currently logged-in user (protected)
 router.get('/me', authMiddleware, authController.getMe);

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, useNavigate, Outlet } from 'react-router-dom'
+import { NavLink, Link, useNavigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import {
   HomeIcon, WrenchScrewdriverIcon, ClockIcon,
@@ -10,6 +10,7 @@ const navItems = [
   { to: '/maintenance/dashboard', label: 'Dashboard',    icon: HomeIcon },
   { to: '/maintenance/tasks',     label: 'My Tasks',     icon: WrenchScrewdriverIcon },
   { to: '/maintenance/history',   label: 'Task History', icon: ClockIcon },
+  { to: '/maintenance/profile',   label: 'My Profile',   icon: UserIcon },
 ]
 
 export default function MaintenanceLayout() {
@@ -52,7 +53,7 @@ export default function MaintenanceLayout() {
         ))}
       </nav>
       <div className="px-4 py-4 border-t border-white/10">
-        <div className="flex items-center gap-3 mb-3">
+        <Link to="/maintenance/profile" className="flex items-center gap-3 mb-3 hover:opacity-90 transition-opacity">
           <div className="w-9 h-9 bg-amber-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
             {user?.full_name?.[0]?.toUpperCase() || 'M'}
           </div>
@@ -60,7 +61,7 @@ export default function MaintenanceLayout() {
             <p className="text-white text-sm font-medium truncate">{user?.full_name}</p>
             <p className="text-amber-200/70 text-xs truncate">Maintenance Staff</p>
           </div>
-        </div>
+        </Link>
         <button
           onClick={handleLogout}
           className="flex items-center gap-2 text-white/70 hover:text-white text-sm w-full px-2 py-1.5 rounded-lg hover:bg-white/10 transition-colors"
@@ -94,12 +95,12 @@ export default function MaintenanceLayout() {
             <Bars3Icon className="w-5 h-5 text-gray-600" />
           </button>
           <div className="flex-1" />
-          <div className="flex items-center gap-2 pl-2 border-l border-gray-100">
+          <Link to="/maintenance/profile" className="flex items-center gap-2 pl-2 border-l border-gray-100 hover:opacity-85 transition-opacity">
             <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center text-amber-700 font-semibold text-sm">
               {user?.full_name?.[0]?.toUpperCase() || 'M'}
             </div>
             <span className="text-sm font-medium text-gray-700 hidden sm:block">{user?.full_name}</span>
-          </div>
+          </Link>
         </header>
         <main className="flex-1 overflow-y-auto">
           <Outlet />

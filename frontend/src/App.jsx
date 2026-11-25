@@ -41,6 +41,7 @@ import MaintenanceDashboard from './pages/maintenance/MaintenanceDashboard'
 import MaintenanceTasksPage from './pages/maintenance/MaintenanceTasksPage'
 import MaintenanceTaskDetailPage from './pages/maintenance/MaintenanceTaskDetailPage'
 import MaintenanceHistoryPage from './pages/maintenance/MaintenanceHistoryPage'
+import MaintenanceProfilePage from './pages/maintenance/MaintenanceProfilePage'
 
 // Placeholder Pages
 import AdminPlaceholder from './pages/admin/AdminPlaceholder'
@@ -142,6 +143,7 @@ function AppRoutes() {
         <Route path="tasks" element={<MaintenanceTasksPage />} />
         <Route path="tasks/:id" element={<MaintenanceTaskDetailPage />} />
         <Route path="history" element={<MaintenanceHistoryPage />} />
+        <Route path="profile" element={<MaintenanceProfilePage />} />
       </Route>
 
       {/* Admin Portal (Bhumika) */}

@@ -108,7 +108,8 @@ export const wardenService = {
 
 export const staffService = {
   getProfile: () => api.get('/staff/profile'),
-  updateProfile: (data) => api.patch('/staff/profile', data),
+  updateProfile: (data) => api.put('/staff/profile', data),
+  changePassword: (data) => api.put('/staff/profile/password', data),
   getWorkloadStats: () => api.get('/staff/workload-stats'),
   getTasks: (params) => api.get('/staff/tasks', { params }),
   getTask: (id) => api.get(`/staff/tasks/${id}`),

@@ -32,23 +32,60 @@ exports.getProfile = async (req, res, next) => {
 };
 
 /**
- * PATCH /api/staff/profile
+ * PATCH / PUT /api/staff/profile
  */
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { phone, is_available } = req.body;
-    if (phone) {
-      await pool.query('UPDATE users SET phone = $1, updated_at = NOW() WHERE id = $2', [phone, req.user.id]);
-    }
-    if (is_available !== undefined) {
+    const { full_name, phone, category, is_available, assigned_block_id } = req.body;
+
+    if (full_name || phone) {
+      const updates = [];
+      const values = [];
+      let idx = 1;
+
+      if (full_name) {
+        updates.push(`full_name = $${idx++}`);
+        values.push(full_name.trim());
+      }
+      if (phone) {
+        updates.push(`phone = $${idx++}`);
+        values.push(phone.trim());
+      }
+      updates.push(`updated_at = NOW()`);
+      values.push(req.user.id);
+
       await pool.query(
-        `INSERT INTO maintenance_staff_profiles (user_id, is_available)
-         VALUES ($1, $2)
-         ON CONFLICT (user_id) DO UPDATE SET is_available = $2`,
-        [req.user.id, is_available]
+        `UPDATE users SET ${updates.join(', ')} WHERE id = $${idx}`,
+        values
       );
     }
-    sendSuccess(res, null, 'Profile updated successfully');
+
+    const validBlockId = assigned_block_id && isValidUUID(assigned_block_id) ? assigned_block_id : null;
+
+    await pool.query(
+      `INSERT INTO maintenance_staff_profiles (user_id, category, is_available, assigned_block_id)
+       VALUES ($1, COALESCE($2, 'General Maintenance'), COALESCE($3, true), $4)
+       ON CONFLICT (user_id) DO UPDATE SET
+         category = COALESCE($2, maintenance_staff_profiles.category),
+         is_available = COALESCE($3, maintenance_staff_profiles.is_available),
+         assigned_block_id = CASE WHEN $4 IS NOT NULL THEN $4 ELSE maintenance_staff_profiles.assigned_block_id END`,
+      [req.user.id, category ? category.trim() : null, is_available, validBlockId]
+    );
+
+    // Fetch refreshed profile
+    const refreshed = await pool.query(
+      `SELECT u.id, u.full_name, u.email, u.phone, u.role,
+              msp.employee_id, msp.category, msp.is_available,
+              b.block_name AS assigned_block, b.id AS assigned_block_id, h.name AS hostel_name
+       FROM users u
+       LEFT JOIN maintenance_staff_profiles msp ON msp.user_id = u.id
+       LEFT JOIN blocks b ON b.id = msp.assigned_block_id
+       LEFT JOIN hostels h ON h.id = b.hostel_id
+       WHERE u.id = $1`,
+      [req.user.id]
+    );
+
+    sendSuccess(res, refreshed.rows[0], 'Profile updated successfully');
   } catch (error) {
     next(error);
   }
