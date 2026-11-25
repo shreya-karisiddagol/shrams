@@ -7,7 +7,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const pool = require('../config/db');
-const { sendSuccess, sendError, formatValidationErrors, sanitizeUser, generateToken } = require('../utils/helpers');
+const { sendSuccess, sendError, formatValidationErrors, sanitizeUser, generateToken, isValidUUID } = require('../utils/helpers');
 
 /**
  * Generate a signed JWT for the given user
