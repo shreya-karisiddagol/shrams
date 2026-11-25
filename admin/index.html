@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SHRAMS – Admin Portal</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%236C63FF'/><text y='.9em' font-size='70' x='15'>🏛</text></svg>" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body class="login-page">
+
+<!-- ═══════════════════════════════════════════════════════
+     LOGIN SCREEN
+═══════════════════════════════════════════════════════ -->
+<div id="loginScreen" class="login-wrapper">
+  <div class="login-bg-art">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-icon"><i class="fas fa-building-columns"></i></div>
+      <h1>SHRAMS</h1>
+      <p>Smart Hostel Resource &amp; Accommodation Management System</p>
+    </div>
+    <div class="login-form-box">
+      <h2>Administrator Login</h2>
+      <p class="login-sub">Secure access to administrative portal</p>
+      <div class="form-group">
+        <label><i class="fas fa-user-shield"></i> Admin Username</label>
+        <input type="text" id="loginUser" placeholder="Enter username" value="admin" />
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-lock"></i> Password</label>
+        <div class="pass-wrap">
+          <input type="password" id="loginPass" placeholder="Enter password" value="admin123" />
+          <button class="eye-btn" onclick="togglePass()"><i class="fas fa-eye" id="eyeIcon"></i></button>
+        </div>
+      </div>
+      <div class="login-options">
+        <label class="checkbox-label"><input type="checkbox" /> Remember me</label>
+        <a href="#" class="forgot-link">Forgot password?</a>
+      </div>
+      <button class="login-btn" onclick="doLogin()">
+        <span>Sign In</span><i class="fas fa-arrow-right"></i>
+      </button>
+      <div id="loginError" class="login-error hidden">
+        <i class="fas fa-exclamation-circle"></i> Invalid credentials. Try admin / admin123
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     MAIN APP SHELL
+═══════════════════════════════════════════════════════ -->
+<div id="appShell" class="app-shell hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="logo-icon-sm"><i class="fas fa-building-columns"></i></div>
+        <div class="sidebar-title">
+          <span class="brand">SHRAMS</span>
+          <span class="role-badge">Administrator</span>
+        </div>
+      </div>
+      <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">OVERVIEW</div>
+      <a href="#" class="nav-item active" data-page="dashboard">
+        <i class="fas fa-gauge-high"></i><span>Dashboard</span>
+      </a>
+
+      <div class="nav-section-label">USER MANAGEMENT</div>
+      <a href="#" class="nav-item" data-page="students">
+        <i class="fas fa-user-graduate"></i><span>Students</span>
+        <span class="badge badge-blue" id="nav-badge-students">248</span>
+      </a>
+      <a href="#" class="nav-item" data-page="wardens">
+        <i class="fas fa-user-tie"></i><span>Wardens</span>
+        <span class="badge badge-green" id="nav-badge-wardens">12</span>
+      </a>
+      <a href="#" class="nav-item" data-page="staff">
+        <i class="fas fa-hard-hat"></i><span>Maintenance Staff</span>
+        <span class="badge badge-orange" id="nav-badge-staff">18</span>
+      </a>
+
+      <div class="nav-section-label">HOSTEL MANAGEMENT</div>
+      <a href="#" class="nav-item" data-page="hostels">
+        <i class="fas fa-hotel"></i><span>Hostels &amp; Blocks</span>
+      </a>
+      <a href="#" class="nav-item" data-page="rooms">
+        <i class="fas fa-door-open"></i><span>Rooms &amp; Beds</span>
+      </a>
+      <a href="#" class="nav-item" data-page="occupancy">
+        <i class="fas fa-chart-pie"></i><span>Occupancy Monitor</span>
+      </a>
+
+      <div class="nav-section-label">OPERATIONS</div>
+      <a href="#" class="nav-item" data-page="applications">
+        <i class="fas fa-file-alt"></i><span>Applications</span>
+        <span class="badge badge-red" id="nav-badge-apps">7</span>
+      </a>
+      <a href="#" class="nav-item" data-page="maintenance">
+        <i class="fas fa-wrench"></i><span>Maintenance</span>
+        <span class="badge badge-red" id="nav-badge-maint">4</span>
+      </a>
+
+      <div class="nav-section-label">ANALYTICS</div>
+      <a href="#" class="nav-item" data-page="reports">
+        <i class="fas fa-chart-bar"></i><span>Reports &amp; Analytics</span>
+      </a>
+
+      <div class="nav-section-label">SYSTEM</div>
+      <a href="#" class="nav-item" data-page="config">
+        <i class="fas fa-sliders"></i><span>Configuration</span>
+      </a>
+      <a href="#" class="nav-item" data-page="activity">
+        <i class="fas fa-clock-rotate-left"></i><span>Activity Log</span>
+      </a>
+      <a href="#" class="nav-item" data-page="announcements">
+        <i class="fas fa-bullhorn"></i><span>Announcements</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="admin-info">
+        <div class="admin-avatar">A</div>
+        <div>
+          <div class="admin-name">Admin User</div>
+          <div class="admin-role">Super Administrator</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()" title="Logout">
+        <i class="fas fa-sign-out-alt"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="main-content" id="mainContent">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+        <div class="breadcrumb" id="breadcrumb">
+          <span>Dashboard</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="search-bar">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Search students, rooms…" id="globalSearch" oninput="globalSearchHandler()" />
+          <div class="search-dropdown hidden" id="searchDropdown"></div>
+        </div>
+        <button class="topbar-btn" onclick="showPage('announcements')" title="Announcements">
+          <i class="fas fa-bullhorn"></i>
+        </button>
+        <div class="notif-wrap">
+          <button class="topbar-btn notif-btn" onclick="toggleNotifPanel()" title="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="notif-dot" id="notifDot"></span>
+          </button>
+          <div class="notif-panel hidden" id="notifPanel">
+            <div class="notif-header">
+              <h3>Notifications</h3>
+              <button onclick="markAllRead()">Mark all read</button>
+            </div>
+            <div id="notifList"></div>
+          </div>
+        </div>
+        <div class="topbar-avatar" onclick="showPage('activity')">A</div>
+      </div>
+    </header>
+
+    <!-- PAGE CONTAINER -->
+    <div class="page-container" id="pageContainer">
+      <!-- pages injected by JS -->
+    </div>
+
+  </main>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+<div class="modal-overlay hidden" id="modalOverlay" onclick="closeModal()"></div>
+<div class="modal hidden" id="modal">
+  <div class="modal-header">
+    <h2 id="modalTitle"></h2>
+    <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="modal-body" id="modalBody"></div>
+  <div class="modal-footer" id="modalFooter"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/pages/dashboard.js"></script>
+<script src="js/pages/users.js"></script>
+<script src="js/pages/hostels.js"></script>
+<script src="js/pages/rooms.js"></script>
+<script src="js/pages/occupancy.js"></script>
+<script src="js/pages/applications.js"></script>
+<script src="js/pages/maintenance.js"></script>
+<script src="js/pages/reports.js"></script>
+<script src="js/pages/config.js"></script>
+<script src="js/pages/activity.js"></script>
+<script src="js/pages/announcements.js"></script>
+</body>
+</html>

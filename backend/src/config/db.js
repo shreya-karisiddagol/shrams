@@ -38,8 +38,8 @@ const testConnection = async () => {
     console.log(`🗄️  DB connected at: ${result.rows[0].now}`);
     client.release();
   } catch (err) {
-    console.error('❌ Database connection failed:', err.message);
-    process.exit(1);
+    console.error('⚠️  Database connection failed:', err.message);
+    console.error('   Please ensure PostgreSQL is running and DB credentials in .env are correct.');
   }
 };
 

@@ -53,7 +53,9 @@ app.get('/api/health', (req, res) => {
 // ─── API Routes ───────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/student', studentRoutes);
+app.use('/api/students', studentRoutes);
 app.use('/api/warden', wardenRoutes);
+app.use('/api/wardens', wardenRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use(notFound);
@@ -62,10 +64,29 @@ app.use(notFound);
 app.use(errorHandler);
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`\n🚀 SHRAMS Backend running on http://localhost:${PORT}`);
   console.log(`📋 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🗄️  Database: ${process.env.DB_NAME}@${process.env.DB_HOST}:${process.env.DB_PORT}\n`);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ Error: Port ${PORT} is already in use.`);
+    console.error(`👉 Either stop the other running instance or change PORT in backend/.env.\n`);
+    process.exit(1);
+  } else {
+    console.error('❌ Server error:', err.message);
+    process.exit(1);
+  }
+});
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+  server.close(() => process.exit(0));
+});
+process.on('SIGTERM', () => {
+  server.close(() => process.exit(0));
 });
 
 module.exports = app;

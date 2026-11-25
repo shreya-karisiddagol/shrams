@@ -204,3 +204,4 @@ After running the SQL schema, you can register accounts via the app.
 - **Async notifications** (non-blocking, fire-and-forget)
 - **Multer file uploads** (images stored to `uploads/`)
 - **Mobile-responsive** UI with Tailwind CSS
+
