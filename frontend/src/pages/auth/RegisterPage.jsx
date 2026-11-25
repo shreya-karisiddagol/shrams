@@ -1,27 +1,46 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { authService } from '../../services/api'
+import { authService, studentService } from '../../services/api'
 import toast from 'react-hot-toast'
-import { AcademicCapIcon, EyeIcon, EyeSlashIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { AcademicCapIcon, EyeIcon, EyeSlashIcon, CheckCircleIcon, ShieldCheckIcon, UserIcon } from '@heroicons/react/24/outline'
 
-const DEPARTMENTS = ['Computer Science', 'Information Science', 'Electronics', 'Mechanical', 'Civil', 'Electrical', 'Chemical', 'Biotechnology', 'Mathematics', 'Physics', 'Other']
+const DEPARTMENTS = ['Computer Science', 'Information Science', 'Electronics', 'Mechanical', 'Civil', 'Electrical', 'Chemical', 'Biotechnology', 'Mathematics', 'Physics', 'Hostel Administration', 'Other']
 const SEMESTERS = [1,2,3,4,5,6,7,8]
 const GENDERS = ['male', 'female', 'other']
 
-const steps = ['Basic Info', 'Academic Details', 'Guardian Info']
+const STUDENT_STEPS = ['Basic Info', 'Academic Details', 'Guardian Info']
+const WARDEN_STEPS = ['Basic Info', 'Warden Details']
 
 export default function RegisterPage() {
   const navigate = useNavigate()
+  const [role, setRole] = useState('student') // 'student' | 'warden'
   const [step, setStep] = useState(0)
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [hostels, setHostels] = useState([])
   const [form, setForm] = useState({
-    full_name: '', email: '', password: '', confirm_password: '',
+    full_name: '', email: '', password: '', confirm_password: '', phone: '',
+    // Student fields
     usn: '', department: '', semester: '', gender: '', date_of_birth: '',
-    phone: '', address: '', parent_name: '', parent_phone: '', parent_email: '', emergency_contact: '', blood_group: ''
+    address: '', parent_name: '', parent_phone: '', parent_email: '', emergency_contact: '', blood_group: '',
+    // Warden fields
+    employee_id: '', hostel_id: ''
   })
 
+  useEffect(() => {
+    studentService.getHostels()
+      .then(res => setHostels(res.data?.data || []))
+      .catch(() => {})
+  }, [])
+
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const steps = role === 'warden' ? WARDEN_STEPS : STUDENT_STEPS
+
+  const handleRoleChange = (newRole) => {
+    setRole(newRole)
+    setStep(0)
+  }
 
   const validateStep = () => {
     if (step === 0) {
@@ -29,8 +48,11 @@ export default function RegisterPage() {
       if (form.password.length < 6) return toast.error('Password must be at least 6 characters') || false
       if (form.password !== form.confirm_password) return toast.error('Passwords do not match') || false
     }
-    if (step === 1) {
+    if (role === 'student' && step === 1) {
       if (!form.usn || !form.department || !form.semester) return toast.error('USN, department and semester are required') || false
+    }
+    if (role === 'warden' && step === 1) {
+      if (!form.phone) return toast.error('Phone number is required') || false
     }
     return true
   }
@@ -40,11 +62,12 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!validateStep()) return
     if (!form.phone) return toast.error('Phone number is required')
     setLoading(true)
     try {
-      await authService.register(form)
-      toast.success('Account created! Please log in.')
+      await authService.register({ ...form, role })
+      toast.success(`${role === 'warden' ? 'Warden' : 'Student'} account created! Please log in.`)
       navigate('/login')
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed')
@@ -53,47 +76,91 @@ export default function RegisterPage() {
     }
   }
 
+  const isWarden = role === 'warden'
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-indigo-50 flex items-center justify-center p-4">
+    <div className={`min-h-screen bg-gradient-to-br ${isWarden ? 'from-emerald-50 via-white to-teal-50' : 'from-primary-50 via-white to-indigo-50'} flex items-center justify-center p-4`}>
       <div className="w-full max-w-lg">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-2 mb-3">
-            <AcademicCapIcon className="w-8 h-8 text-primary-600" />
-            <span className="font-bold text-xl text-primary-600">SHRAMS</span>
+            {isWarden ? (
+              <ShieldCheckIcon className="w-9 h-9 text-emerald-600" />
+            ) : (
+              <AcademicCapIcon className="w-9 h-9 text-primary-600" />
+            )}
+            <span className={`font-bold text-2xl ${isWarden ? 'text-emerald-700' : 'text-primary-600'}`}>SHRAMS</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Create Student Account</h1>
-          <p className="text-gray-500 text-sm mt-1">Register to access hostel services</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isWarden ? 'Create Warden Account' : 'Create Student Account'}
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            {isWarden ? 'Register as a hostel warden to manage student allocations and complaints' : 'Register to access hostel accommodation and room allocation'}
+          </p>
+        </div>
+
+        {/* Role Switcher Tabs */}
+        <div className="bg-gray-100 p-1 rounded-xl flex gap-1 mb-6 shadow-inner">
+          <button
+            type="button"
+            onClick={() => handleRoleChange('student')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              !isWarden
+                ? 'bg-white text-primary-700 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <UserIcon className="w-4 h-4" />
+            I am a Student
+          </button>
+          <button
+            type="button"
+            onClick={() => handleRoleChange('warden')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              isWarden
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <ShieldCheckIcon className="w-4 h-4" />
+            I am a Warden
+          </button>
         </div>
 
         {/* Progress */}
-        <div className="flex items-center justify-center gap-0 mb-8">
+        <div className="flex items-center justify-center gap-0 mb-6">
           {steps.map((s, i) => (
             <div key={s} className="flex items-center">
               <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-all ${
-                i < step ? 'bg-primary-600 text-white' : i === step ? 'bg-primary-600 text-white ring-4 ring-primary-100' : 'bg-gray-200 text-gray-400'
+                i < step
+                  ? isWarden ? 'bg-emerald-600 text-white' : 'bg-primary-600 text-white'
+                  : i === step
+                    ? isWarden ? 'bg-emerald-600 text-white ring-4 ring-emerald-100' : 'bg-primary-600 text-white ring-4 ring-primary-100'
+                    : 'bg-gray-200 text-gray-400'
               }`}>
                 {i < step ? <CheckCircleIcon className="w-5 h-5" /> : i + 1}
               </div>
-              <span className={`mx-2 text-xs font-medium ${i === step ? 'text-primary-600' : 'text-gray-400'}`}>{s}</span>
-              {i < steps.length - 1 && <div className={`w-8 h-0.5 ${i < step ? 'bg-primary-600' : 'bg-gray-200'}`} />}
+              <span className={`mx-2 text-xs font-medium ${i === step ? (isWarden ? 'text-emerald-700' : 'text-primary-600') : 'text-gray-400'}`}>{s}</span>
+              {i < steps.length - 1 && (
+                <div className={`w-10 h-0.5 ${i < step ? (isWarden ? 'bg-emerald-600' : 'bg-primary-600') : 'bg-gray-200'}`} />
+              )}
             </div>
           ))}
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <form onSubmit={handleSubmit}>
-            {/* Step 0: Basic Info */}
+            {/* Step 0: Basic Info (Both Roles) */}
             {step === 0 && (
               <div className="space-y-4">
-                <h2 className="font-semibold text-gray-900 mb-4">Basic Information</h2>
+                <h2 className="font-semibold text-gray-900 mb-2">Basic Information</h2>
                 <div>
                   <label className="label">Full Name *</label>
-                  <input className="input-field" value={form.full_name} onChange={e => set('full_name', e.target.value)} placeholder="Your full name" />
+                  <input className="input-field" value={form.full_name} onChange={e => set('full_name', e.target.value)} placeholder={isWarden ? 'e.g. Dr. Ramesh Kumar' : 'Your full name'} />
                 </div>
                 <div>
-                  <label className="label">Email *</label>
-                  <input type="email" className="input-field" value={form.email} onChange={e => set('email', e.target.value)} placeholder="your@email.com" />
+                  <label className="label">Official Email *</label>
+                  <input type="email" className="input-field" value={form.email} onChange={e => set('email', e.target.value)} placeholder={isWarden ? 'warden@university.edu' : 'your@email.com'} />
                 </div>
                 <div>
                   <label className="label">Password *</label>
@@ -111,13 +178,44 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* Step 1: Academic */}
-            {step === 1 && (
+            {/* WARDEN Step 1: Warden Professional Details */}
+            {isWarden && step === 1 && (
               <div className="space-y-4">
-                <h2 className="font-semibold text-gray-900 mb-4">Academic Details</h2>
+                <h2 className="font-semibold text-gray-900 mb-2">Warden Details</h2>
+                <div>
+                  <label className="label">Employee ID (Optional)</label>
+                  <input className="input-field font-mono" value={form.employee_id} onChange={e => set('employee_id', e.target.value.toUpperCase())} placeholder="e.g. WRD-2024" />
+                </div>
+                <div>
+                  <label className="label">Department / Faculty</label>
+                  <select className="input-field" value={form.department} onChange={e => set('department', e.target.value)}>
+                    <option value="">Select Department</option>
+                    {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Phone Number *</label>
+                  <input className="input-field" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="10-digit mobile number" maxLength={10} />
+                </div>
+                <div>
+                  <label className="label">Assigned Hostel (Optional)</label>
+                  <select className="input-field" value={form.hostel_id} onChange={e => set('hostel_id', e.target.value)}>
+                    <option value="">Select Hostel (or leave unassigned)</option>
+                    {hostels.map(h => (
+                      <option key={h.id} value={h.id}>{h.name} ({h.type === 'boys' ? 'Boys' : 'Girls'})</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* STUDENT Step 1: Academic Details */}
+            {!isWarden && step === 1 && (
+              <div className="space-y-4">
+                <h2 className="font-semibold text-gray-900 mb-2">Academic Details</h2>
                 <div>
                   <label className="label">USN (University Seat Number) *</label>
-                  <input className="input-field" value={form.usn} onChange={e => set('usn', e.target.value.toUpperCase())} placeholder="e.g. 1AB22CS001" />
+                  <input className="input-field font-mono" value={form.usn} onChange={e => set('usn', e.target.value.toUpperCase())} placeholder="e.g. 1AB22CS001" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -148,22 +246,20 @@ export default function RegisterPage() {
                     <input type="date" className="input-field" value={form.date_of_birth} onChange={e => set('date_of_birth', e.target.value)} />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">Blood Group</label>
-                    <select className="input-field" value={form.blood_group} onChange={e => set('blood_group', e.target.value)}>
-                      <option value="">Select</option>
-                      {['A+','A-','B+','B-','AB+','AB-','O+','O-'].map(b => <option key={b}>{b}</option>)}
-                    </select>
-                  </div>
+                <div>
+                  <label className="label">Blood Group</label>
+                  <select className="input-field" value={form.blood_group} onChange={e => set('blood_group', e.target.value)}>
+                    <option value="">Select</option>
+                    {['A+','A-','B+','B-','AB+','AB-','O+','O-'].map(b => <option key={b}>{b}</option>)}
+                  </select>
                 </div>
               </div>
             )}
 
-            {/* Step 2: Contact & Guardian */}
-            {step === 2 && (
+            {/* STUDENT Step 2: Contact & Guardian */}
+            {!isWarden && step === 2 && (
               <div className="space-y-4">
-                <h2 className="font-semibold text-gray-900 mb-4">Contact & Guardian Details</h2>
+                <h2 className="font-semibold text-gray-900 mb-2">Contact & Guardian Details</h2>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="label">Phone Number *</label>
@@ -204,10 +300,27 @@ export default function RegisterPage() {
                 <button type="button" onClick={back} className="btn-secondary flex-1">← Back</button>
               )}
               {step < steps.length - 1 ? (
-                <button type="button" onClick={next} className="btn-primary flex-1">Next →</button>
+                <button
+                  type="button"
+                  onClick={next}
+                  className={`flex-1 py-2.5 rounded-lg text-white font-medium transition-all ${
+                    isWarden ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-primary-600 hover:bg-primary-700'
+                  }`}
+                >
+                  Next →
+                </button>
               ) : (
-                <button type="submit" disabled={loading} className="btn-primary flex-1 flex items-center justify-center gap-2">
-                  {loading ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Creating...</> : 'Create Account'}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`flex-1 py-2.5 rounded-lg text-white font-medium flex items-center justify-center gap-2 transition-all ${
+                    isWarden ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-primary-600 hover:bg-primary-700'
+                  }`}
+                >
+                  {loading
+                    ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Creating...</>
+                    : `Create ${isWarden ? 'Warden' : 'Student'} Account`
+                  }
                 </button>
               )}
             </div>
@@ -216,7 +329,9 @@ export default function RegisterPage() {
 
         <p className="text-center text-sm text-gray-500 mt-5">
           Already have an account?{' '}
-          <Link to="/login" className="text-primary-600 font-medium hover:text-primary-700">Sign in</Link>
+          <Link to="/login" className={`font-medium ${isWarden ? 'text-emerald-700 hover:text-emerald-800' : 'text-primary-600 hover:text-primary-700'}`}>
+            Sign in
+          </Link>
         </p>
       </div>
     </div>

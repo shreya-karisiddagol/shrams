@@ -33,10 +33,13 @@ exports.register = async (req, res, next) => {
     }
 
     const {
-      full_name, email, password, phone,
+      full_name, email, password, phone, role = 'student',
+      // Student specific fields
       usn, department, semester, gender,
       date_of_birth, address, parent_name, parent_phone, parent_email,
       emergency_contact, blood_group,
+      // Warden specific fields
+      employee_id, hostel_id,
     } = req.body;
 
     // Check if email already exists
@@ -45,17 +48,23 @@ exports.register = async (req, res, next) => {
       return sendError(res, 'An account with this email already exists.', 409);
     }
 
-    // Check if USN already exists
-    const usnCheck = await pool.query('SELECT id FROM student_profiles WHERE usn = $1', [usn]);
-    if (usnCheck.rows.length > 0) {
-      return sendError(res, 'An account with this USN already exists.', 409);
+    if (role === 'student') {
+      if (!usn) return sendError(res, 'USN is required for student registration.', 422);
+      const usnCheck = await pool.query('SELECT id FROM student_profiles WHERE usn = $1', [usn]);
+      if (usnCheck.rows.length > 0) {
+        return sendError(res, 'An account with this USN already exists.', 409);
+      }
+    } else if (role === 'warden' && employee_id) {
+      const empCheck = await pool.query('SELECT id FROM warden_profiles WHERE employee_id = $1', [employee_id]);
+      if (empCheck.rows.length > 0) {
+        return sendError(res, 'An account with this Employee ID already exists.', 409);
+      }
     }
 
     // Hash password
     const saltRounds = 12;
     const password_hash = await bcrypt.hash(password, saltRounds);
 
-    // Use a transaction to create user + profile atomically
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -63,30 +72,39 @@ exports.register = async (req, res, next) => {
       // Insert into users table
       const userResult = await client.query(
         `INSERT INTO users (full_name, email, password_hash, role, phone)
-         VALUES ($1, $2, $3, 'student', $4)
+         VALUES ($1, $2, $3, $4, $5)
          RETURNING id, full_name, email, role, phone, is_active, created_at`,
-        [full_name, email, password_hash, phone || null]
+        [full_name, email, password_hash, role, phone || null]
       );
       const newUser = userResult.rows[0];
 
-      // Insert into student_profiles table
-      await client.query(
-        `INSERT INTO student_profiles
-           (user_id, usn, department, semester, gender, date_of_birth,
-            address, parent_name, parent_phone, parent_email, emergency_contact, blood_group)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-        [
-          newUser.id, usn.toUpperCase(), department || null, semester || null,
-          gender || null, date_of_birth || null, address || null,
-          parent_name || null, parent_phone || null, parent_email || null,
-          emergency_contact || null, blood_group || null,
-        ]
-      );
+      if (role === 'warden') {
+        // Insert into warden_profiles
+        await client.query(
+          `INSERT INTO warden_profiles (user_id, employee_id, department, hostel_id)
+           VALUES ($1, $2, $3, $4)`,
+          [newUser.id, employee_id ? employee_id.toUpperCase() : null, department || null, hostel_id || null]
+        );
+      } else {
+        // Insert into student_profiles table
+        await client.query(
+          `INSERT INTO student_profiles
+             (user_id, usn, department, semester, gender, date_of_birth,
+              address, parent_name, parent_phone, parent_email, emergency_contact, blood_group)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+          [
+            newUser.id, usn.toUpperCase(), department || null, semester || null,
+            gender || null, date_of_birth || null, address || null,
+            parent_name || null, parent_phone || null, parent_email || null,
+            emergency_contact || null, blood_group || null,
+          ]
+        );
+      }
 
       await client.query('COMMIT');
 
       const token = signToken(newUser);
-      return sendSuccess(res, { user: sanitizeUser(newUser), token }, 'Account created successfully', 201);
+      return sendSuccess(res, { user: sanitizeUser(newUser), token }, `${role === 'warden' ? 'Warden' : 'Student'} account created successfully`, 201);
     } catch (err) {
       await client.query('ROLLBACK');
       throw err;
