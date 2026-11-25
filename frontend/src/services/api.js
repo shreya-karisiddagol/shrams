@@ -106,4 +106,18 @@ export const wardenService = {
   getMaintenanceReport: (params) => api.get('/wardens/reports/maintenance', { params }),
 }
 
+export const staffService = {
+  getProfile: () => api.get('/staff/profile'),
+  updateProfile: (data) => api.patch('/staff/profile', data),
+  getWorkloadStats: () => api.get('/staff/workload-stats'),
+  getTasks: (params) => api.get('/staff/tasks', { params }),
+  getTask: (id) => api.get(`/staff/tasks/${id}`),
+  updateStatus: (id, data) => api.patch(`/staff/tasks/${id}/status`, data),
+  addNote: (id, data) => api.post(`/staff/tasks/${id}/notes`, data),
+  getHistory: (params) => api.get('/staff/tasks/history', { params }),
+}
+
+export const maintenanceService = staffService
+
 export default api
+

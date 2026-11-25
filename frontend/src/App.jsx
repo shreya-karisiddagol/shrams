@@ -35,8 +35,14 @@ import WardenAnnouncementsPage from './pages/warden/WardenAnnouncementsPage'
 import ReportsPage from './pages/warden/ReportsPage'
 import WardenRequestsPage from './pages/warden/WardenRequestsPage'
 
+// Maintenance Pages & Layout
+import MaintenanceLayout from './components/Layout/MaintenanceLayout'
+import MaintenanceDashboard from './pages/maintenance/MaintenanceDashboard'
+import MaintenanceTasksPage from './pages/maintenance/MaintenanceTasksPage'
+import MaintenanceTaskDetailPage from './pages/maintenance/MaintenanceTaskDetailPage'
+import MaintenanceHistoryPage from './pages/maintenance/MaintenanceHistoryPage'
+
 // Placeholder Pages
-import MaintenancePlaceholder from './pages/maintenance/MaintenancePlaceholder'
 import AdminPlaceholder from './pages/admin/AdminPlaceholder'
 import SuperAdminPlaceholder from './pages/superadmin/SuperAdminPlaceholder'
 
@@ -125,8 +131,18 @@ function AppRoutes() {
         <Route path="reports" element={<ReportsPage />} />
       </Route>
 
-      {/* Maintenance Portal (Preeti) */}
-      <Route path="/maintenance/*" element={<MaintenancePlaceholder />} />
+      {/* Maintenance Portal */}
+      <Route path="/maintenance" element={
+        <ProtectedRoute allowedRoles={['maintenance']}>
+          <MaintenanceLayout />
+        </ProtectedRoute>
+      }>
+        <Route index element={<Navigate to="/maintenance/dashboard" replace />} />
+        <Route path="dashboard" element={<MaintenanceDashboard />} />
+        <Route path="tasks" element={<MaintenanceTasksPage />} />
+        <Route path="tasks/:id" element={<MaintenanceTaskDetailPage />} />
+        <Route path="history" element={<MaintenanceHistoryPage />} />
+      </Route>
 
       {/* Admin Portal (Bhumika) */}
       <Route path="/admin/*" element={<AdminPlaceholder />} />

@@ -1141,6 +1141,9 @@ exports.assignComplaint = async (req, res, next) => {
     // Notify the student
     await notify.complaintAssigned(complaint.student_id, id);
 
+    // Notify the assigned maintenance staff
+    await notify.taskAssignedToStaff(assigned_to, id, complaint.title);
+
     sendSuccess(res, updated, 'Complaint assigned successfully');
   } catch (error) {
     next(error);

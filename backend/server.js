@@ -13,6 +13,7 @@ const path = require('path');
 const authRoutes = require('./src/routes/auth.routes');
 const studentRoutes = require('./src/routes/student.routes');
 const wardenRoutes = require('./src/routes/warden.routes');
+const staffRoutes = require('./src/routes/staff.routes');
 
 // Middleware imports
 const { errorHandler, notFound } = require('./src/middleware/errorHandler');
@@ -56,6 +57,8 @@ app.use('/api/student', studentRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/warden', wardenRoutes);
 app.use('/api/wardens', wardenRoutes);
+app.use('/api/staff', staffRoutes);
+app.use('/api/maintenance', staffRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use(notFound);

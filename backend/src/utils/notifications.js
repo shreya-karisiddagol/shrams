@@ -137,6 +137,16 @@ const notify = {
       relatedType: 'complaint',
     }),
 
+  taskAssignedToStaff: (userId, complaintId, taskTitle) =>
+    createNotification({
+      userId,
+      title: 'New Maintenance Task Assigned 🔧',
+      message: `You have been assigned a new task: ${taskTitle || 'Maintenance task'}.`,
+      type: 'info',
+      relatedId: complaintId,
+      relatedType: 'complaint',
+    }),
+
   complaintResolved: (userId, complaintId) =>
     createNotification({
       userId,
