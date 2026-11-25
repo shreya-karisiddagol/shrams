@@ -11,6 +11,15 @@ const PRIORITY_STYLES = {
   urgent:    { badge: 'bg-red-100 text-red-700', border: 'border-red-200', icon: '🚨' },
 }
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return '—'
+  try {
+    return format(new Date(dateStr), 'dd MMM yyyy · hh:mm a')
+  } catch (_) {
+    return '—'
+  }
+}
+
 export default function AnnouncementsPage() {
   const [announcements, setAnnouncements] = useState([])
   const [loading, setLoading] = useState(true)
@@ -18,12 +27,23 @@ export default function AnnouncementsPage() {
 
   useEffect(() => {
     studentService.getAnnouncements()
-      .then(res => setAnnouncements(res.data?.data || []))
-      .catch(() => {})
+      .then(res => {
+        const raw = res.data?.data
+        const list = Array.isArray(raw)
+          ? raw
+          : (Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw?.announcements) ? raw.announcements : []))
+        setAnnouncements(list)
+      })
+      .catch(err => {
+        console.error('Error fetching announcements:', err)
+        setAnnouncements([])
+      })
       .finally(() => setLoading(false))
   }, [])
 
-  const filtered = filter === 'all' ? announcements : announcements.filter(a => a.priority === filter)
+  const filtered = filter === 'all'
+    ? (Array.isArray(announcements) ? announcements : [])
+    : (Array.isArray(announcements) ? announcements.filter(a => a.priority === filter) : [])
 
   if (loading) return <LoadingSpinner text="Loading announcements..." />
 
@@ -76,7 +96,7 @@ export default function AnnouncementsPage() {
                 </div>
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 text-xs text-gray-400">
                   <span>Posted by: {a.posted_by_name || 'Hostel Management'}</span>
-                  <span>{format(new Date(a.created_at), 'dd MMM yyyy · hh:mm a')}</span>
+                  <span>{formatDate(a.created_at)}</span>
                 </div>
               </div>
             )

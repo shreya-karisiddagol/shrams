@@ -592,16 +592,20 @@ exports.markAllNotificationsRead = async (req, res, next) => {
  */
 exports.getAnnouncements = async (req, res, next) => {
   try {
-    const { page, limit, offset } = getPagination(req.query);
+    const { limit, offset } = getPagination(req.query);
 
-    // Find student's current hostel (via active allocation)
-    const allocation = await AllocationModel.findActiveByStudentId(req.user.id);
+    // Check student's active allocation or pending application for hostel context
+    const [allocRes, appRes] = await Promise.all([
+      pool.query(`SELECT hostel_id FROM allocations WHERE student_id = $1 AND status = 'active' LIMIT 1`, [req.user.id]),
+      pool.query(`SELECT preferred_hostel_id AS hostel_id FROM hostel_applications WHERE student_id = $1 ORDER BY created_at DESC LIMIT 1`, [req.user.id]),
+    ]);
+
+    const hostelId = allocRes.rows[0]?.hostel_id || appRes.rows[0]?.hostel_id || null;
 
     let query;
     let values;
 
-    if (allocation) {
-      // Show announcements for their hostel + global announcements (hostel_id IS NULL)
+    if (hostelId) {
       query = `
         SELECT a.*, u.full_name AS posted_by_name, h.name AS hostel_name
         FROM announcements a
@@ -614,36 +618,24 @@ exports.getAnnouncements = async (req, res, next) => {
           a.created_at DESC
         LIMIT $2 OFFSET $3
       `;
-      values = [allocation.hostel_id, limit, offset];
+      values = [hostelId, limit, offset];
     } else {
-      // No allocation — show only global announcements
       query = `
-        SELECT a.*, u.full_name AS posted_by_name
+        SELECT a.*, u.full_name AS posted_by_name, h.name AS hostel_name
         FROM announcements a
         LEFT JOIN users u ON u.id = a.posted_by
-        WHERE a.hostel_id IS NULL
-          AND (a.expires_at IS NULL OR a.expires_at > NOW())
-        ORDER BY a.created_at DESC
+        LEFT JOIN hostels h ON h.id = a.hostel_id
+        WHERE (a.expires_at IS NULL OR a.expires_at > NOW())
+        ORDER BY
+          CASE a.priority WHEN 'urgent' THEN 1 WHEN 'important' THEN 2 ELSE 3 END,
+          a.created_at DESC
         LIMIT $1 OFFSET $2
       `;
       values = [limit, offset];
     }
 
     const result = await pool.query(query, values);
-
-    // Count for pagination
-    const countResult = await pool.query(
-      allocation
-        ? `SELECT COUNT(*) FROM announcements WHERE (hostel_id = $1 OR hostel_id IS NULL) AND (expires_at IS NULL OR expires_at > NOW())`
-        : `SELECT COUNT(*) FROM announcements WHERE hostel_id IS NULL AND (expires_at IS NULL OR expires_at > NOW())`,
-      allocation ? [allocation.hostel_id] : []
-    );
-
-    sendSuccess(
-      res,
-      paginatedResponse(result.rows, countResult.rows[0].count, page, limit),
-      'Announcements fetched'
-    );
+    sendSuccess(res, result.rows, 'Announcements fetched');
   } catch (error) {
     next(error);
   }
