@@ -26,10 +26,18 @@ export default function LoginPage() {
       toast.success(`Welcome, ${data.user.name}!`);
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Login failed. Check your credentials.');
+      if (!err.response) {
+        toast.error('Cannot connect to backend! Is "node src/index.js" running on port 5000?');
+      } else {
+        toast.error(err.response?.data?.message || 'Login failed. Check your credentials.');
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleQuickLogin = (email) => {
+    setForm({ email, password: 'password123' });
   };
 
   return (
@@ -72,7 +80,39 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
+        <div className="mt-6 border-t border-gray-100 pt-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider text-center mb-2">
+            Quick Demo Login
+          </p>
+          <div className="flex flex-col gap-1.5">
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('ravi.kumar@shrams.in')}
+              className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 py-1.5 px-3 rounded text-left transition-colors font-medium flex justify-between"
+            >
+              <span>⚡ Ravi Kumar</span>
+              <span className="text-blue-500">Electrical</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('suresh.p@shrams.in')}
+              className="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-1.5 px-3 rounded text-left transition-colors font-medium flex justify-between"
+            >
+              <span>⚡ Suresh Plumber</span>
+              <span className="text-indigo-500">Plumbing</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('mohan.c@shrams.in')}
+              className="text-xs bg-amber-50 text-amber-700 hover:bg-amber-100 py-1.5 px-3 rounded text-left transition-colors font-medium flex justify-between"
+            >
+              <span>⚡ Mohan Carpenter</span>
+              <span className="text-amber-500">Carpentry</span>
+            </button>
+          </div>
+        </div>
+
+        <p className="text-center text-xs text-gray-400 mt-4">
           Contact your administrator to reset your password.
         </p>
       </div>
