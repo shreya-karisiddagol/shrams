@@ -80,10 +80,16 @@ exports.register = async (req, res, next) => {
 
       if (role === 'warden') {
         // Insert into warden_profiles
+        const validHostelId = hostel_id && isValidUUID(hostel_id) ? hostel_id : null;
         await client.query(
           `INSERT INTO warden_profiles (user_id, employee_id, department, hostel_id)
            VALUES ($1, $2, $3, $4)`,
-          [newUser.id, employee_id ? employee_id.toUpperCase() : null, department || null, hostel_id || null]
+          [
+            newUser.id,
+            employee_id && employee_id.trim() ? employee_id.trim().toUpperCase() : null,
+            department && department.trim() ? department.trim() : null,
+            validHostelId
+          ]
         );
       } else {
         // Insert into student_profiles table

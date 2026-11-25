@@ -21,9 +21,9 @@ const registerValidation = [
   body('email').trim().isEmail().withMessage('Valid email is required').normalizeEmail(),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('role').optional().isIn(['student', 'warden']).withMessage('Role must be student or warden'),
-  body('usn').if(body('role').equals('student')).trim().notEmpty().withMessage('USN is required for student registration'),
-  body('phone').optional().isMobilePhone().withMessage('Invalid phone number'),
-  body('gender').optional().isIn(['male', 'female', 'other']).withMessage('Invalid gender value'),
+  body('usn').if((val, { req }) => req.body.role === 'student' || !req.body.role).trim().notEmpty().withMessage('USN is required for student registration'),
+  body('phone').optional({ values: 'falsy' }),
+  body('gender').optional({ values: 'falsy' }).isIn(['male', 'female', 'other']).withMessage('Invalid gender value'),
 ];
 
 const loginValidation = [

@@ -68,7 +68,34 @@ export default function RegisterPage() {
     if (!form.phone) return toast.error('Phone number is required')
     setLoading(true)
     try {
-      await authService.register({ ...form, role })
+      const payload = {
+        full_name: form.full_name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        phone: form.phone.trim(),
+        role,
+        ...(role === 'warden'
+          ? {
+              employee_id: form.employee_id?.trim() || undefined,
+              department: form.department || undefined,
+              hostel_id: form.hostel_id || undefined,
+            }
+          : {
+              usn: form.usn?.trim(),
+              department: form.department || undefined,
+              semester: form.semester ? parseInt(form.semester, 10) : undefined,
+              gender: form.gender || undefined,
+              date_of_birth: form.date_of_birth || undefined,
+              blood_group: form.blood_group || undefined,
+              address: form.address || undefined,
+              parent_name: form.parent_name || undefined,
+              parent_phone: form.parent_phone || undefined,
+              parent_email: form.parent_email || undefined,
+              emergency_contact: form.emergency_contact || undefined,
+            }),
+      }
+
+      await authService.register(payload)
       toast.success(`${role === 'warden' ? 'Warden' : 'Student'} account created! Please log in.`)
       navigate('/login')
     } catch (err) {
