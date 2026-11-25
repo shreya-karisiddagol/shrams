@@ -7,3 +7,5 @@ uploads/profiles/*
 dist/
 *.log
 scratch/
+frontend/proxy5176.cjs
+

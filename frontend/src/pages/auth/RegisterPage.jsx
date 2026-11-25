@@ -29,7 +29,14 @@ const MAINTENANCE_CATEGORIES = [
 export default function RegisterPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const paramRole = searchParams.get('role')
+
+  const rawSearch = typeof window !== 'undefined' ? window.location.search : ''
+  const decodedSearch = decodeURIComponent(rawSearch).toLowerCase()
+  let paramRole = searchParams.get('role')?.toLowerCase()
+  if (!paramRole) {
+    if (decodedSearch.includes('maintenance')) paramRole = 'maintenance'
+    else if (decodedSearch.includes('warden')) paramRole = 'warden'
+  }
   const initialRole = ['warden', 'maintenance', 'student'].includes(paramRole) ? paramRole : 'student'
 
   const [role, setRole] = useState(initialRole)
