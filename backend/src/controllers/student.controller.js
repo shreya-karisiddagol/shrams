@@ -140,6 +140,25 @@ exports.getRoomsByHostel = async (req, res, next) => {
   }
 };
 
+/**
+ * GET /api/student/hostels/:hostelId/blocks
+ * Returns blocks for a specific hostel
+ */
+exports.getBlocksByHostel = async (req, res, next) => {
+  try {
+    const { hostelId } = req.params;
+    if (!isValidUUID(hostelId)) return sendError(res, 'Invalid hostel ID.', 400);
+
+    const result = await pool.query(
+      'SELECT id, block_name, total_floors FROM blocks WHERE hostel_id = $1 AND is_active = true ORDER BY block_name ASC',
+      [hostelId]
+    );
+    sendSuccess(res, result.rows, 'Blocks fetched');
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ─── Applications ─────────────────────────────────────────────────────────────
 
 /**
@@ -148,12 +167,9 @@ exports.getRoomsByHostel = async (req, res, next) => {
  */
 exports.getApplications = async (req, res, next) => {
   try {
-    const { page, limit, offset } = getPagination(req.query);
-    const [applications, total] = await Promise.all([
-      ApplicationModel.findByStudentId(req.user.id, limit, offset),
-      ApplicationModel.countByStudentId(req.user.id),
-    ]);
-    sendSuccess(res, paginatedResponse(applications, total, page, limit), 'Applications fetched');
+    const { limit, offset } = getPagination(req.query);
+    const applications = await ApplicationModel.findByStudentId(req.user.id, limit, offset);
+    sendSuccess(res, applications, 'Applications fetched');
   } catch (error) {
     next(error);
   }

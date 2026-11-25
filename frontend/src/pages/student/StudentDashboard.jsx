@@ -25,8 +25,13 @@ export default function StudentDashboard() {
           studentService.getComplaints({ limit: 3 }),
           studentService.getNotifications({ limit: 5 }),
         ])
+        const appsRaw = apps.status === 'fulfilled' ? apps.value.data?.data : null
+        const appList = Array.isArray(appsRaw)
+          ? appsRaw
+          : (Array.isArray(appsRaw?.data) ? appsRaw.data : (Array.isArray(appsRaw?.applications) ? appsRaw.applications : []))
+
         setData({
-          application: apps.status === 'fulfilled' ? apps.value.data?.data?.[0] : null,
+          application: appList[0] || null,
           allocation: alloc.status === 'fulfilled' ? alloc.value.data?.data : null,
           complaints: comps.status === 'fulfilled' ? comps.value.data?.data?.complaints || [] : [],
           notifications: notifs.status === 'fulfilled' ? notifs.value.data?.data?.notifications || [] : [],
@@ -82,10 +87,10 @@ export default function StudentDashboard() {
                 <span className="text-sm text-gray-600">Applied On</span>
                 <span className="text-sm font-medium">{format(new Date(application.created_at), 'dd MMM yyyy')}</span>
               </div>
-              {application.preferred_hostel_name && (
+              {(application.preferred_hostel_name || application.hostel_name) && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Preferred Hostel</span>
-                  <span className="text-sm font-medium">{application.preferred_hostel_name}</span>
+                  <span className="text-sm font-medium">{application.preferred_hostel_name || application.hostel_name}</span>
                 </div>
               )}
               {/* Timeline */}

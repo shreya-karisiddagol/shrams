@@ -13,10 +13,18 @@ const timeline = [
 ]
 
 function getTimelineStep(status) {
-  if (status === 'pending') return 1
   if (status === 'waitlisted') return 2
   if (status === 'approved' || status === 'rejected') return 3
-  return 0
+  return 1 // 'pending' or newly submitted
+}
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '—'
+  try {
+    return format(new Date(dateStr), 'dd MMM yyyy')
+  } catch (_) {
+    return '—'
+  }
 }
 
 export default function ApplicationStatusPage() {
@@ -25,11 +33,20 @@ export default function ApplicationStatusPage() {
   const [selected, setSelected] = useState(null)
 
   useEffect(() => {
-    studentService.getApplications().then(res => {
-      const apps = res.data?.data || []
-      setApplications(apps)
-      if (apps.length) setSelected(apps[0])
-    }).catch(() => {}).finally(() => setLoading(false))
+    studentService.getApplications()
+      .then(res => {
+        const raw = res.data?.data
+        const apps = Array.isArray(raw)
+          ? raw
+          : (Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw?.applications) ? raw.applications : []))
+        setApplications(apps)
+        if (apps.length > 0) setSelected(apps[0])
+      })
+      .catch(err => {
+        console.error('Error fetching applications:', err)
+        setApplications([])
+      })
+      .finally(() => setLoading(false))
   }, [])
 
   if (loading) return <LoadingSpinner text="Loading applications..." />
@@ -58,11 +75,11 @@ export default function ApplicationStatusPage() {
                 className={`card cursor-pointer transition-all hover:shadow-md ${selected?.id === app.id ? 'ring-2 ring-primary-500' : ''}`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-gray-400">{format(new Date(app.created_at), 'dd MMM yyyy')}</span>
+                  <span className="text-xs text-gray-400">{formatDate(app.created_at)}</span>
                   <Badge status={app.status} />
                 </div>
-                <p className="text-sm font-semibold text-gray-900">{app.preferred_hostel_name || 'Any Hostel'}</p>
-                <p className="text-xs text-gray-500 capitalize">{app.preferred_room_type || '—'} room · Sem {app.semester}</p>
+                <p className="text-sm font-semibold text-gray-900">{app.preferred_hostel_name || app.hostel_name || 'Any Hostel'}</p>
+                <p className="text-xs text-gray-500 capitalize">{app.preferred_room_type || '—'} room · Sem {app.semester || '—'}</p>
               </div>
             ))}
           </div>
@@ -101,10 +118,10 @@ export default function ApplicationStatusPage() {
               {/* Info grid */}
               <div className="bg-gray-50 rounded-xl divide-y divide-gray-100">
                 {[
-                  ['Application Date', format(new Date(selected.created_at), 'dd MMM yyyy')],
-                  ['Preferred Hostel', selected.preferred_hostel_name || 'Any'],
+                  ['Application Date', formatDate(selected.created_at)],
+                  ['Preferred Hostel', selected.preferred_hostel_name || selected.hostel_name || 'Any'],
                   ['Preferred Room Type', selected.preferred_room_type || '—'],
-                  ['Semester', selected.semester],
+                  ['Semester', selected.semester ? `Semester ${selected.semester}` : '—'],
                   ['Academic Year', selected.academic_year || '—'],
                 ].map(([k, v]) => (
                   <div key={k} className="flex justify-between py-3 px-4 text-sm">

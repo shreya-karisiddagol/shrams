@@ -20,6 +20,7 @@ router.put('/profile/contact', studentController.updateContact);
 
 // ─── Hostels ──────────────────────────────────────────────────────────────────
 router.get('/hostels', studentController.getHostels);
+router.get('/hostels/:hostelId/blocks', studentController.getBlocksByHostel);
 router.get('/hostels/:hostelId/rooms', studentController.getRoomsByHostel);
 
 // ─── Applications ─────────────────────────────────────────────────────────────

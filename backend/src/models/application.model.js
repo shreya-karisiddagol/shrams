@@ -13,7 +13,9 @@ const ApplicationModel = {
     const result = await pool.query(
       `SELECT
          ha.*,
-         h.name AS hostel_name, h.type AS hostel_type,
+         h.name AS hostel_name,
+         h.name AS preferred_hostel_name,
+         h.type AS hostel_type,
          b.block_name AS preferred_block_name,
          u.full_name AS reviewed_by_name
        FROM hostel_applications ha
