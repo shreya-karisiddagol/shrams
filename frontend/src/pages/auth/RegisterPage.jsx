@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { authService, studentService } from '../../services/api'
 import toast from 'react-hot-toast'
 import { AcademicCapIcon, EyeIcon, EyeSlashIcon, CheckCircleIcon, ShieldCheckIcon, UserIcon } from '@heroicons/react/24/outline'
@@ -13,7 +13,9 @@ const WARDEN_STEPS = ['Basic Info', 'Warden Details']
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const [role, setRole] = useState('student') // 'student' | 'warden'
+  const [searchParams] = useSearchParams()
+  const initialRole = searchParams.get('role') === 'warden' ? 'warden' : 'student'
+  const [role, setRole] = useState(initialRole)
   const [step, setStep] = useState(0)
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)

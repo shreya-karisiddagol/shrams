@@ -169,9 +169,12 @@ export default function LoginPage() {
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-6">
-            New student?{' '}
-            <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
-              Create an account
+            Don't have an account?{' '}
+            <Link
+              to={form.role === 'warden' ? '/register?role=warden' : '/register'}
+              className="text-primary-600 hover:text-primary-700 font-semibold"
+            >
+              {form.role === 'warden' ? 'Create Warden Account' : 'Create an account'}
             </Link>
           </p>
         </div>
