@@ -6,3 +6,4 @@ uploads/profiles/*
 !uploads/profiles/.gitkeep
 dist/
 *.log
+scratch/

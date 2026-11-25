@@ -62,6 +62,7 @@ router.get('/occupancy', wardenController.getOccupancy);
 // ─── Announcements ────────────────────────────────────────────────────────────
 router.get('/announcements', wardenController.getAnnouncements);
 router.post('/announcements', wardenController.createAnnouncement);
+router.delete('/announcements/:id', wardenController.deleteAnnouncement);
 
 // ─── Reports ──────────────────────────────────────────────────────────────────
 router.get('/reports/occupancy', wardenController.getOccupancyReport);

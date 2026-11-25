@@ -7,7 +7,8 @@ import LoadingSpinner from '../../components/common/LoadingSpinner'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
 import {
   UsersIcon, DocumentTextIcon, BuildingOfficeIcon,
-  WrenchScrewdriverIcon, ArrowRightIcon, ExclamationTriangleIcon
+  WrenchScrewdriverIcon, ArrowRightIcon, ExclamationTriangleIcon,
+  ArrowsRightLeftIcon, ArrowPathIcon
 } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
 
@@ -16,20 +17,50 @@ const COLORS = ['#10b981', '#f59e0b', '#ef4444', '#6b7280']
 export default function WardenDashboard() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const fetchDashboard = () => {
+    setLoading(true)
+    setError(null)
+    wardenService.getDashboard()
+      .then(res => {
+        setData(res.data?.data || null)
+      })
+      .catch(err => {
+        console.error('Warden dashboard fetch error:', err)
+        setError(err.response?.data?.message || 'Failed to load dashboard data.')
+      })
+      .finally(() => setLoading(false))
+  }
 
   useEffect(() => {
-    wardenService.getDashboard()
-      .then(res => setData(res.data?.data))
-      .finally(() => setLoading(false))
+    fetchDashboard()
   }, [])
 
   if (loading) return <LoadingSpinner text="Loading dashboard..." />
-  if (!data) return <div className="p-6 text-gray-500">Failed to load dashboard data.</div>
+
+  if (error || !data) {
+    return (
+      <div className="p-8 max-w-lg mx-auto text-center space-y-4 animate-fade-in">
+        <div className="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto">
+          <ExclamationTriangleIcon className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900">Dashboard Unavailable</h2>
+        <p className="text-gray-500 text-sm">{error || 'Unable to fetch warden dashboard data.'}</p>
+        <button
+          onClick={fetchDashboard}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium transition-all shadow-sm shadow-emerald-200"
+        >
+          <ArrowPathIcon className="w-4 h-4" /> Try Again
+        </button>
+      </div>
+    )
+  }
 
   const occupancyData = data.occupancy_by_block?.map(b => ({
     name: `Block ${b.block_name}`,
-    Occupied: parseInt(b.occupied_beds),
-    Available: parseInt(b.available_beds),
+    Occupied: parseInt(b.occupied_beds || 0, 10),
+    Available: parseInt(b.available_beds || 0, 10),
   })) || []
 
   const roomStatusData = [
@@ -41,17 +72,75 @@ export default function WardenDashboard() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
-      <div className="bg-gradient-to-r from-warden-600 to-warden-800 rounded-2xl p-6 text-white">
-        <h1 className="text-2xl font-bold">Warden Dashboard</h1>
-        <p className="text-warden-100 mt-1 text-sm">Manage hostel operations and student accommodation</p>
+      <div className="bg-gradient-to-r from-warden-600 to-warden-800 rounded-2xl p-6 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-2xl font-bold">Warden Dashboard</h1>
+            {data.hostel?.name && (
+              <span className="bg-white/20 text-white text-xs px-2.5 py-0.5 rounded-full font-medium">
+                {data.hostel.name}
+              </span>
+            )}
+          </div>
+          <p className="text-warden-100 text-sm">Manage hostel operations, student applications and room requests</p>
+        </div>
+        <button
+          onClick={fetchDashboard}
+          className="self-start sm:self-auto p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs flex items-center gap-1.5 transition-all"
+          title="Refresh Dashboard"
+        >
+          <ArrowPathIcon className="w-4 h-4" />
+          <span>Refresh</span>
+        </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={UsersIcon} label="Total Students" value={data.stats?.total_students} iconBg="bg-blue-100" iconColor="text-blue-600" />
-        <StatCard icon={DocumentTextIcon} label="Pending Applications" value={data.stats?.pending_applications} iconBg="bg-yellow-100" iconColor="text-yellow-600" />
-        <StatCard icon={BuildingOfficeIcon} label="Available Beds" value={data.stats?.available_beds} iconBg="bg-green-100" iconColor="text-green-600" />
-        <StatCard icon={WrenchScrewdriverIcon} label="Open Complaints" value={data.stats?.open_complaints} iconBg="bg-red-100" iconColor="text-red-600" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <StatCard icon={UsersIcon} label="Total Students" value={data.stats?.total_students ?? 0} iconBg="bg-blue-100" iconColor="text-blue-600" />
+        <StatCard icon={DocumentTextIcon} label="Pending Applications" value={data.stats?.pending_applications ?? 0} iconBg="bg-yellow-100" iconColor="text-yellow-600" />
+        <StatCard icon={ArrowsRightLeftIcon} label="Student Requests" value={data.stats?.pending_requests ?? 0} iconBg="bg-purple-100" iconColor="text-purple-600" />
+        <StatCard icon={BuildingOfficeIcon} label="Available Beds" value={data.stats?.available_beds ?? 0} iconBg="bg-green-100" iconColor="text-green-600" />
+        <StatCard icon={WrenchScrewdriverIcon} label="Open Complaints" value={data.stats?.open_complaints ?? 0} iconBg="bg-red-100" iconColor="text-red-600" />
+      </div>
+
+      {/* Quick Action Navigation */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Link to="/warden/applications" className="card hover:shadow-md transition-all flex items-center justify-between p-4 group">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-all">
+              <DocumentTextIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900 text-sm">Hostel Applications</p>
+              <p className="text-xs text-gray-500">{data.stats?.pending_applications || 0} pending review</p>
+            </div>
+          </div>
+          <ArrowRightIcon className="w-4 h-4 text-gray-400 group-hover:text-warden-600 group-hover:translate-x-1 transition-all" />
+        </Link>
+        <Link to="/warden/requests" className="card hover:shadow-md transition-all flex items-center justify-between p-4 group">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-105 transition-all">
+              <ArrowsRightLeftIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900 text-sm">Student Requests</p>
+              <p className="text-xs text-gray-500">{data.stats?.pending_requests || 0} change / vacating / transfer</p>
+            </div>
+          </div>
+          <ArrowRightIcon className="w-4 h-4 text-gray-400 group-hover:text-warden-600 group-hover:translate-x-1 transition-all" />
+        </Link>
+        <Link to="/warden/allocations" className="card hover:shadow-md transition-all flex items-center justify-between p-4 group">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-all">
+              <BuildingOfficeIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900 text-sm">Room Allocation</p>
+              <p className="text-xs text-gray-500">{data.stats?.available_beds || 0} beds available</p>
+            </div>
+          </div>
+          <ArrowRightIcon className="w-4 h-4 text-gray-400 group-hover:text-warden-600 group-hover:translate-x-1 transition-all" />
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

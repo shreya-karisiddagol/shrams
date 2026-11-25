@@ -33,6 +33,7 @@ import WardenComplaintsPage from './pages/warden/WardenComplaintsPage'
 import StaffPage from './pages/warden/StaffPage'
 import WardenAnnouncementsPage from './pages/warden/WardenAnnouncementsPage'
 import ReportsPage from './pages/warden/ReportsPage'
+import WardenRequestsPage from './pages/warden/WardenRequestsPage'
 
 // Placeholder Pages
 import MaintenancePlaceholder from './pages/maintenance/MaintenancePlaceholder'
@@ -114,6 +115,7 @@ function AppRoutes() {
         <Route index element={<Navigate to="/warden/dashboard" replace />} />
         <Route path="dashboard" element={<WardenDashboard />} />
         <Route path="applications" element={<WardenApplicationsPage />} />
+        <Route path="requests" element={<WardenRequestsPage />} />
         <Route path="allocations" element={<AllocationsPage />} />
         <Route path="students" element={<StudentsPage />} />
         <Route path="rooms" element={<RoomsPage />} />

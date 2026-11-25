@@ -5,19 +5,20 @@ import {
   HomeIcon, UsersIcon, DocumentTextIcon, BuildingOfficeIcon,
   WrenchScrewdriverIcon, MegaphoneIcon, ChartBarIcon,
   Bars3Icon, XMarkIcon, ArrowRightOnRectangleIcon, BellIcon,
-  UserGroupIcon, Square3Stack3DIcon
+  UserGroupIcon, Square3Stack3DIcon, ArrowsRightLeftIcon
 } from '@heroicons/react/24/outline'
 
 const navItems = [
-  { to: '/warden/dashboard',    label: 'Dashboard',       icon: HomeIcon },
-  { to: '/warden/applications', label: 'Applications',    icon: DocumentTextIcon },
-  { to: '/warden/allocations',  label: 'Allocations',     icon: Square3Stack3DIcon },
-  { to: '/warden/students',     label: 'Students',        icon: UsersIcon },
-  { to: '/warden/rooms',        label: 'Rooms & Beds',    icon: BuildingOfficeIcon },
-  { to: '/warden/complaints',   label: 'Complaints',      icon: WrenchScrewdriverIcon },
+  { to: '/warden/dashboard',    label: 'Dashboard',        icon: HomeIcon },
+  { to: '/warden/applications', label: 'Applications',     icon: DocumentTextIcon },
+  { to: '/warden/requests',     label: 'Student Requests', icon: ArrowsRightLeftIcon },
+  { to: '/warden/allocations',  label: 'Allocations',      icon: Square3Stack3DIcon },
+  { to: '/warden/students',     label: 'Students',         icon: UsersIcon },
+  { to: '/warden/rooms',        label: 'Rooms & Beds',     icon: BuildingOfficeIcon },
+  { to: '/warden/complaints',   label: 'Complaints',       icon: WrenchScrewdriverIcon },
   { to: '/warden/staff',        label: 'Maintenance Staff', icon: UserGroupIcon },
-  { to: '/warden/announcements', label: 'Announcements',  icon: MegaphoneIcon },
-  { to: '/warden/reports',      label: 'Reports',         icon: ChartBarIcon },
+  { to: '/warden/announcements', label: 'Announcements',   icon: MegaphoneIcon },
+  { to: '/warden/reports',      label: 'Reports',          icon: ChartBarIcon },
 ]
 
 export default function WardenLayout() {

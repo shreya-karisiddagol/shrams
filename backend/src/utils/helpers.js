@@ -30,17 +30,25 @@ const getPagination = (query, defaultLimit = 10, maxLimit = 100) => {
  * @param {number} limit - Page size
  * @returns {Object}
  */
-const paginatedResponse = (data, totalCount, page, limit) => ({
-  data,
-  pagination: {
-    total: parseInt(totalCount, 10),
-    page,
-    limit,
-    totalPages: Math.ceil(totalCount / limit),
-    hasNextPage: page * limit < totalCount,
-    hasPrevPage: page > 1,
-  },
-});
+const paginatedResponse = (data, totalCount, page, limit, key) => {
+  const total = parseInt(totalCount, 10) || 0;
+  const result = {
+    data,
+    total,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page * limit < total,
+      hasPrevPage: page > 1,
+    },
+  };
+  if (key) {
+    result[key] = data;
+  }
+  return result;
+};
 
 /**
  * Standard success response

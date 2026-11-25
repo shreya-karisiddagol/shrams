@@ -21,9 +21,16 @@ export default function WardenAnnouncementsPage() {
   const [submitting, setSubmitting] = useState(false)
 
   const load = () => {
-    setLoading(true)
     wardenService.getAnnouncements()
-      .then(r => setAnnouncements(r.data?.data || []))
+      .then(r => {
+        const raw = r.data?.data
+        const list = Array.isArray(raw) ? raw : (raw?.announcements || raw?.data || [])
+        setAnnouncements(list)
+      })
+      .catch(err => {
+        console.error('Failed to load announcements:', err)
+        setAnnouncements([])
+      })
       .finally(() => setLoading(false))
   }
   useEffect(() => { load() }, [])

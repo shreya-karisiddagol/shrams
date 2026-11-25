@@ -23,19 +23,23 @@ export default function AllocationsPage() {
   const [history, setHistory] = useState([])
   const [pendingApproved, setPendingApproved] = useState(0)
 
-  useEffect(() => {
+  const loadData = () => {
     setLoading(true)
     wardenService.getAllocations({ status: 'active' })
-      .then(r => setAllocations(r.data?.data?.allocations || []))
+      .then(r => setAllocations(r.data?.data?.allocations || r.data?.data || []))
       .finally(() => setLoading(false))
     wardenService.getApplications({ status: 'approved', limit: 100 })
       .then(r => setPendingApproved(r.data?.data?.total || 0))
-    wardenService.getStudents({ limit: 200 })
-      .then(r => setStudents(r.data?.data?.students || []))
+    wardenService.getStudents({ unallocated: true, limit: 200 })
+      .then(r => setStudents(r.data?.data?.students || r.data?.data || []))
     wardenService.getRooms({ status: 'available' })
-      .then(r => setRooms(r.data?.data?.rooms || []))
+      .then(r => setRooms(r.data?.data?.rooms || r.data?.data || []))
     wardenService.getAllocations({ status: 'vacated', limit: 50 })
-      .then(r => setHistory(r.data?.data?.allocations || []))
+      .then(r => setHistory(r.data?.data?.allocations || r.data?.data || []))
+  }
+
+  useEffect(() => {
+    loadData()
   }, [])
 
   const runAutoAllocate = async () => {
@@ -44,7 +48,7 @@ export default function AllocationsPage() {
       const res = await wardenService.autoAllocate()
       setAutoResult(res.data?.data)
       toast.success(`Auto-allocation complete! ${res.data?.data?.allocated || 0} students allocated.`)
-      wardenService.getAllocations({ status: 'active' }).then(r => setAllocations(r.data?.data?.allocations || []))
+      loadData()
     } catch (err) { toast.error(err.response?.data?.message || 'Auto-allocation failed') }
     finally { setAutoLoading(false) }
   }
@@ -56,7 +60,7 @@ export default function AllocationsPage() {
       await wardenService.manualAllocate(manualForm)
       toast.success('Student allocated successfully!')
       setManualForm({ student_id: '', bed_id: '' })
-      wardenService.getAllocations({ status: 'active' }).then(r => setAllocations(r.data?.data?.allocations || []))
+      loadData()
     } catch (err) { toast.error(err.response?.data?.message || 'Allocation failed') }
     finally { setSubmitting(false) }
   }
@@ -171,21 +175,42 @@ export default function AllocationsPage() {
           </div>
           <div>
             <label className="label">Select Student *</label>
-            <select className="input-field" value={manualForm.student_id} onChange={e => setManualForm(f => ({ ...f, student_id: e.target.value }))}>
+            <select
+              className="input-field"
+              value={manualForm.student_id}
+              onChange={e => setManualForm(f => ({ ...f, student_id: e.target.value }))}
+            >
               <option value="">Search and select a student...</option>
-              {students.map(s => <option key={s.id} value={s.id}>{s.full_name} ({s.usn})</option>)}
+              {students.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.full_name} ({s.usn || s.email}){s.application_status ? ` · App: ${s.application_status}` : ''}
+                </option>
+              ))}
             </select>
+            {students.length === 0 && (
+              <p className="text-xs text-gray-500 mt-1">No unallocated students available.</p>
+            )}
           </div>
           <div>
             <label className="label">Select Available Bed *</label>
-            <select className="input-field" value={manualForm.bed_id} onChange={e => setManualForm(f => ({ ...f, bed_id: e.target.value }))}>
+            <select
+              className="input-field"
+              value={manualForm.bed_id}
+              onChange={e => setManualForm(f => ({ ...f, bed_id: e.target.value }))}
+            >
               <option value="">Select a bed...</option>
-              {rooms.flatMap(r => (r.available_beds || []).map(b => (
-                <option key={b.id} value={b.id}>
-                  {r.hostel_name} › Block {r.block_name} › Room {r.room_number} › Bed {b.bed_number} ({r.room_type})
-                </option>
-              )))}
+              {rooms.flatMap(r => {
+                const beds = Array.isArray(r.available_beds) ? r.available_beds : []
+                return beds.map(b => (
+                  <option key={b.id} value={b.id}>
+                    {r.hostel_name || 'Hostel'} › Block {r.block_name} › Room {r.room_number} › Bed {b.bed_number} ({r.room_type})
+                  </option>
+                ))
+              })}
             </select>
+            {rooms.length === 0 && (
+              <p className="text-xs text-gray-500 mt-1">No available rooms or beds found.</p>
+            )}
           </div>
           <button onClick={submitManual} disabled={submitting} className="btn-success w-full py-2.5 flex items-center justify-center gap-2">
             {submitting ? 'Allocating...' : '✓ Allocate Room'}

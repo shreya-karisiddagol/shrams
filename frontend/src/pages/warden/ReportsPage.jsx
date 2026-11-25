@@ -112,12 +112,12 @@ export default function ReportsPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[
-              { label: 'Total Active Allocations', value: data.allocations.total_active },
-              { label: 'Allocated This Month', value: data.allocations.this_month },
-              { label: 'Vacated This Month', value: data.allocations.vacated_this_month },
+              { label: 'Total Active Allocations', value: data.allocations.total_active ?? data.allocations.active ?? 0 },
+              { label: 'Allocated This Month', value: data.allocations.this_month ?? 0 },
+              { label: 'Vacated This Month', value: data.allocations.vacated_this_month ?? 0 },
             ].map(s => (
               <div key={s.label} className="card text-center">
-                <p className="text-3xl font-bold text-gray-900">{s.value ?? '—'}</p>
+                <p className="text-3xl font-bold text-gray-900">{s.value ?? 0}</p>
                 <p className="text-sm text-gray-500 mt-1">{s.label}</p>
               </div>
             ))}

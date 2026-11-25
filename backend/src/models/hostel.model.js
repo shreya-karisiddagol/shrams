@@ -67,10 +67,22 @@ const HostelModel = {
       SELECT
         r.*,
         b.block_name, b.id AS block_id,
-        COUNT(bd.id) FILTER (WHERE bd.status = 'available') AS available_beds,
-        COUNT(bd.id) AS total_beds
+        h.name AS hostel_name,
+        COUNT(bd.id) FILTER (WHERE bd.status = 'available') AS available_beds_count,
+        COUNT(bd.id) AS total_beds,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', bd.id,
+              'bed_number', bd.bed_number,
+              'status', bd.status
+            ) ORDER BY bd.bed_number
+          ) FILTER (WHERE bd.status = 'available'),
+          '[]'::json
+        ) AS available_beds
       FROM rooms r
       JOIN blocks b ON r.block_id = b.id
+      JOIN hostels h ON h.id = b.hostel_id
       LEFT JOIN beds bd ON bd.room_id = r.id
       WHERE b.hostel_id = $1
         AND r.status NOT IN ('maintenance','reserved','fully_occupied')
@@ -82,7 +94,7 @@ const HostelModel = {
       values.push(roomType);
     }
 
-    query += ` GROUP BY r.id, b.block_name, b.id HAVING COUNT(bd.id) FILTER (WHERE bd.status = 'available') > 0 ORDER BY b.block_name, r.room_number`;
+    query += ` GROUP BY r.id, b.block_name, b.id, h.name HAVING COUNT(bd.id) FILTER (WHERE bd.status = 'available') > 0 ORDER BY b.block_name, r.room_number`;
     const result = await pool.query(query, values);
     return result.rows;
   },
